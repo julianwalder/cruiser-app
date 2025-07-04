@@ -33,7 +33,7 @@ export const LoginPage: React.FC = () => {
         body: JSON.stringify({ email }),
       });
 
-      const data = await response.json();
+      const data = await response.json() as { token?: string; message?: string };
 
       if (response.ok) {
         toast.success('Magic link sent! Check your email.');
@@ -64,7 +64,7 @@ export const LoginPage: React.FC = () => {
         method: 'GET',
       });
 
-      const data = await response.json();
+      const data = await response.json() as { access_token: string; message?: string };
 
       if (response.ok) {
         // Store the JWT token

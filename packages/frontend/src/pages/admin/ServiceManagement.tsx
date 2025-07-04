@@ -43,7 +43,7 @@ const ServiceManagement: React.FC<ServiceManagementProps> = ({ userRole = 'user'
       if (!response.ok) {
         throw new Error('Failed to fetch services');
       }
-      const data = await response.json();
+      const data = await response.json() as any[];
       setServices(data);
     } catch (err) {
       console.error('Error fetching services:', err);
@@ -94,7 +94,7 @@ const ServiceManagement: React.FC<ServiceManagementProps> = ({ userRole = 'user'
         throw new Error('Failed to create service');
       }
 
-      const newService = await response.json();
+      const newService = await response.json() as any;
       setServices(prev => [...prev, newService]);
       setShowAddServiceModal(false);
       setServiceFormData({
@@ -153,7 +153,7 @@ const ServiceManagement: React.FC<ServiceManagementProps> = ({ userRole = 'user'
         throw new Error('Failed to update service');
       }
 
-      const updatedService = await response.json();
+      const updatedService = await response.json() as any;
       setServices(prev => prev.map(service => 
         service.id === selectedService.id 
           ? updatedService
@@ -229,7 +229,7 @@ const ServiceManagement: React.FC<ServiceManagementProps> = ({ userRole = 'user'
       console.log('Upload response status:', response.status);
 
       if (response.ok) {
-        const data = await response.json();
+        const data = await response.json() as { url: string };
         console.log('Upload success:', data);
         handleServiceFormChange('imageUrl', data.url);
         alert('Service image uploaded successfully!');

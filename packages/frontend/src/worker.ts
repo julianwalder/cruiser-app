@@ -9,10 +9,10 @@ import { getAssetFromKV } from '@cloudflare/kv-asset-handler'
  */
 const DEBUG = false
 
-addEventListener('fetch', event => {
+addEventListener('fetch', (event: any) => {
   try {
     event.respondWith(handleEvent(event))
-  } catch (e) {
+  } catch (e: any) {
     if (DEBUG) {
       return event.respondWith(
         new Response(e.message || e.toString(), {
@@ -26,7 +26,7 @@ addEventListener('fetch', event => {
 
 async function handleEvent(event: FetchEvent): Promise<Response> {
   const url = new URL(event.request.url)
-  let options = {}
+  let options: any = {}
 
   /**
    * You can add custom logic to how we fetch your assets

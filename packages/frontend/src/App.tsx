@@ -40,7 +40,7 @@ const VerifyPage: React.FC = () => {
         body: JSON.stringify({ token }),
       });
 
-      const data = await response.json();
+      const data = await response.json() as { access_token: string; user?: { role: string }; message?: string };
 
       if (response.ok) {
         // Store the JWT token

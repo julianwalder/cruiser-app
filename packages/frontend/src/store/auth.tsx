@@ -86,7 +86,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       if (response.ok) {
-        const userData = await response.json();
+        const userData = await response.json() as User;
         console.log('AuthContext - Fetched user data from Firebase:', userData);
         return userData;
       }
@@ -114,7 +114,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       if (response.ok) {
-        const userData = await response.json();
+        const userData = await response.json() as User;
         console.log('AuthContext - Fetched user data from JWT:', userData);
         return userData;
       } else {

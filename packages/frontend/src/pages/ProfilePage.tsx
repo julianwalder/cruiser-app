@@ -91,7 +91,7 @@ export const ProfilePage: React.FC = () => {
       });
       
       if (response.ok) {
-        const userData = await response.json();
+        const userData = await response.json() as any;
         
         // Populate profile data with user data
         setProfileData(prev => ({

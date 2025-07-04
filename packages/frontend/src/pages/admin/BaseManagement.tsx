@@ -48,7 +48,7 @@ const BaseManagement: React.FC<BaseManagementProps> = ({ userRole = 'user' }) =>
     try {
       const response = await fetch('/api/admin/bases');
       if (response.ok) {
-        const data = await response.json();
+        const data = await response.json() as any[];
         setBases(data);
       } else {
         setBases([]);
@@ -79,9 +79,9 @@ const BaseManagement: React.FC<BaseManagementProps> = ({ userRole = 'user' }) =>
         method: 'POST',
         body: formData,
       });
-      const data = await res.json();
+      const data = await res.json() as { url?: string; error?: string };
       if (data.url) {
-        setBaseFormData((prev) => ({ ...prev, imageUrl: data.url }));
+        setBaseFormData((prev) => ({ ...prev, imageUrl: data.url! }));
       } else {
         setImageUploadError(data.error || 'Upload failed');
       }
@@ -108,7 +108,7 @@ const BaseManagement: React.FC<BaseManagementProps> = ({ userRole = 'user' }) =>
       });
 
       if (response.ok) {
-        const newBase = await response.json();
+        const newBase = await response.json() as any;
         setShowAddBaseModal(false);
         setBaseFormData({
           name: '',
@@ -136,7 +136,7 @@ const BaseManagement: React.FC<BaseManagementProps> = ({ userRole = 'user' }) =>
         alert('Base created successfully!');
         fetchBases();
       } else {
-        const error = await response.json();
+        const error = await response.json() as any;
         alert('Failed to create base. Please try again.');
       }
     } catch (error) {

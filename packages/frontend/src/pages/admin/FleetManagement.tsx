@@ -42,7 +42,7 @@ const FleetManagement: React.FC = () => {
         const aircraftResponse = await fetch(`${API_URL}/api/admin/aircraft`);
         if (aircraftResponse.ok) {
           const aircraftData = await aircraftResponse.json();
-          setFleet(aircraftData);
+          setFleet(aircraftData as any[]);
         } else {
           console.error('Failed to fetch aircraft:', aircraftResponse.status, aircraftResponse.statusText);
           setError('Failed to load aircraft data. Please try again later.');
@@ -52,7 +52,7 @@ const FleetManagement: React.FC = () => {
         const basesResponse = await fetch(`${API_URL}/api/admin/bases`);
         if (basesResponse.ok) {
           const basesData = await basesResponse.json();
-          setBases(basesData);
+          setBases(basesData as any[]);
         } else {
           console.error('Failed to fetch bases:', basesResponse.status, basesResponse.statusText);
         }
@@ -115,7 +115,7 @@ const FleetManagement: React.FC = () => {
       if (response.ok) {
         const data = await response.json();
         console.log('Upload success:', data);
-        handleAircraftFormChange('imageUrl', data.url);
+        handleAircraftFormChange('imageUrl', (data as any).url);
         alert('Aircraft image uploaded successfully!');
       } else {
         const errorData = await response.text();

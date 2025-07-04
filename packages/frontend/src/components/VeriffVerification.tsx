@@ -73,7 +73,7 @@ export const VeriffVerification: React.FC<VeriffVerificationProps> = ({
       
       const sessionData = await response.json();
       console.log('VeriffVerification - Session created successfully:', sessionData);
-      setSessionUrl(sessionData.url || sessionData.sessionUrl);
+      setSessionUrl((sessionData as any).url || (sessionData as any).sessionUrl);
       
       setVerificationStatus({ 
         status: 'success', 

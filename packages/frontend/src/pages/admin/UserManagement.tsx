@@ -89,7 +89,7 @@ const UserManagement: React.FC = () => {
       const response = await fetch('/api/admin/users');
       if (response.ok) {
         const data = await response.json();
-        setUsers(data);
+        setUsers(data as any[]);
       } else {
         console.log('API not available, using mock data');
         setUsers(mockUsers);
@@ -125,7 +125,7 @@ const UserManagement: React.FC = () => {
 
       if (response.ok) {
         const data = await response.json();
-        handleUserFormChange('imageUrl', data.url);
+        handleUserFormChange('imageUrl', (data as any).url);
         alert('Image uploaded successfully!');
       } else {
         alert('Failed to upload image. Please try again.');
