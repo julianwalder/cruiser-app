@@ -35,13 +35,13 @@ PROD_VARS_VALUES=(
     "https://api.cruiseraviation.com"
     "Cruiser Aviation"
     "1.0.0"
-    "AIzaSyChijXhZBr7ycWKEQSK1bCdLSoQioKEurk"
+    ""
     "cruiserapp-b8429.firebaseapp.com"
     "cruiserapp-b8429"
     "cruiserapp-b8429.firebasestorage.app"
-    "123456789012"
-    "1:123456789012:web:abcdef1234567890"
-    "G-XXXXXXXXXX"
+    "443919130210"
+    "1:443919130210:web:b8a009ef9ca1ca4f433b3b"
+    "G-BCDHQJ67Z0"
 )
 
 STAGING_VARS_KEYS=(
@@ -61,13 +61,13 @@ STAGING_VARS_VALUES=(
     "https://staging-api.cruiseraviation.com"
     "Cruiser Aviation (Staging)"
     "1.0.0"
-    "AIzaSyChijXhZBr7ycWKEQSK1bCdLSoQioKEurk"
+    ""
     "cruiserapp-b8429.firebaseapp.com"
     "cruiserapp-b8429"
     "cruiserapp-b8429.firebasestorage.app"
-    "123456789012"
-    "1:123456789012:web:abcdef1234567890"
-    "G-XXXXXXXXXX"
+    "443919130210"
+    "1:443919130210:web:b8a009ef9ca1ca4f433b3b"
+    "G-BCDHQJ67Z0"
 )
 
 # Function to get variable value by key
