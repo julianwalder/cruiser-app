@@ -39,5 +39,10 @@
         }
       ]
     }
-  ]
+  ],
+  "environment_variables": {
+    "VITE_API_URL": "https://your-backend-api.com",
+    "VITE_APP_NAME": "Cruiser Aviation",
+    "VITE_APP_VERSION": "1.0.0"
+  }
 } 
