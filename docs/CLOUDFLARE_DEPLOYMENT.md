@@ -1,124 +1,181 @@
-# Cloudflare Pages Deployment Guide
+# Cloudflare Workers Deployment Guide
 
 ## Overview
-This guide explains how to deploy the Cruiser Aviation frontend to Cloudflare Pages using their direct GitHub integration and environment variables.
+This guide explains how to deploy the Cruiser Aviation frontend to Cloudflare Workers using their serverless platform. This approach provides better performance, lower latency, and more control over your application.
 
 ## Prerequisites
 - Cloudflare account
-- GitHub repository connected to Cloudflare
-- Wrangler CLI (optional, for manual deployments)
+- Wrangler CLI installed
+- Node.js and npm
 
 ## Setup Instructions
 
-### 1. Connect GitHub Repository to Cloudflare Pages
+### 1. Install Dependencies
 
-1. Go to [Cloudflare Dashboard](https://dash.cloudflare.com)
-2. Navigate to **Pages** → **Create a project**
-3. Choose **Connect to Git**
-4. Select your GitHub repository: `julianwalder/cruiser-app`
-5. Configure build settings:
-   - **Framework preset**: None
-   - **Build command**: `cd packages/frontend && npm run build`
-   - **Build output directory**: `packages/frontend/dist`
-   - **Root directory**: `/` (leave empty)
-
-### 2. Configure Environment Variables
-
-In your Cloudflare Pages project settings, add these environment variables:
-
-#### Production Environment Variables:
-```
-VITE_API_URL=https://your-backend-api.com
-VITE_APP_NAME=Cruiser Aviation
-VITE_APP_VERSION=1.0.0
-VITE_FIREBASE_API_KEY=your_firebase_api_key
-VITE_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
-VITE_FIREBASE_PROJECT_ID=your_project_id
-VITE_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
-VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
-VITE_FIREBASE_APP_ID=your_app_id
-VITE_VERIFF_PUBLIC_KEY=your_veriff_public_key
-```
-
-#### Preview Environment Variables (for PR deployments):
-```
-VITE_API_URL=https://staging-backend-api.com
-VITE_APP_NAME=Cruiser Aviation (Staging)
-VITE_APP_VERSION=1.0.0
-VITE_FIREBASE_API_KEY=your_staging_firebase_api_key
-VITE_FIREBASE_AUTH_DOMAIN=your_staging_project.firebaseapp.com
-VITE_FIREBASE_PROJECT_ID=your_staging_project_id
-VITE_FIREBASE_STORAGE_BUCKET=your_staging_project.appspot.com
-VITE_FIREBASE_MESSAGING_SENDER_ID=your_staging_sender_id
-VITE_FIREBASE_APP_ID=your_staging_app_id
-VITE_VERIFF_PUBLIC_KEY=your_staging_veriff_public_key
-```
-
-### 3. Configure Build Settings
-
-In your Cloudflare Pages project settings:
-
-- **Node.js version**: 18
-- **Build command**: `cd packages/frontend && npm ci && npm run build`
-- **Build output directory**: `packages/frontend/dist`
-
-### 4. Automatic Deployments
-
-Once configured, Cloudflare Pages will automatically:
-- Deploy to production when you push to `main` or `master` branch
-- Create preview deployments for pull requests
-- Use the appropriate environment variables for each environment
-
-### 5. Manual Deployment (Optional)
-
-If you want to deploy manually using the CLI:
+First, install the required dependencies:
 
 ```bash
-# Install Wrangler CLI
-npm install -g wrangler
-
-# Login to Cloudflare
-wrangler login
-
-# Deploy manually
-./scripts/deploy-cloudflare.sh
+cd packages/frontend
+npm install
 ```
 
-## Benefits of This Approach
+### 2. Configure Wrangler
 
-1. **Simplified Workflow**: No need for GitHub Actions
-2. **Environment Variables**: Managed directly in Cloudflare
-3. **Automatic Deployments**: Triggers on every push/PR
-4. **Preview Deployments**: Automatic PR previews
-5. **Better Performance**: Cloudflare's global CDN
-6. **Cost Effective**: Free tier available
+1. **Login to Cloudflare**:
+   ```bash
+   wrangler login
+   ```
+
+2. **Update Environment Variables**:
+   Edit `packages/frontend/wrangler.toml` and update the environment variables:
+   ```toml
+   [[env.production.vars]]
+   name = "VITE_API_URL"
+   value = "https://your-production-api.com"
+   
+   [[env.staging.vars]]
+   name = "VITE_API_URL"
+   value = "https://your-staging-api.com"
+   ```
+
+### 3. Deploy to Cloudflare Workers
+
+#### Development Deployment
+```bash
+npm run deploy:dev
+```
+
+#### Staging Deployment
+```bash
+npm run deploy:staging
+```
+
+#### Production Deployment
+```bash
+npm run deploy:production
+```
+
+### 4. Using the Deployment Script
+
+Alternatively, you can use the deployment script:
+
+```bash
+# From the root directory
+./scripts/deploy-worker.sh production
+./scripts/deploy-worker.sh staging
+./scripts/deploy-worker.sh
+```
+
+## How It Works
+
+### Worker Architecture
+The Cloudflare Worker (`src/worker.ts`) serves your React SPA by:
+
+1. **Static Asset Serving**: Serves built assets (JS, CSS, images) with optimal caching
+2. **SPA Routing**: Handles client-side routing by serving `index.html` for non-asset requests
+3. **Edge Caching**: Leverages Cloudflare's global edge network for fast delivery
+4. **Environment Variables**: Injects build-time environment variables
+
+### Benefits of Workers over Pages
+
+1. **Better Performance**: Workers run at the edge, closer to users
+2. **More Control**: Custom routing and caching logic
+3. **Lower Latency**: Direct edge execution
+4. **Cost Effective**: Pay-per-request model
+5. **Global Distribution**: Automatic global deployment
+
+### Environment Variables
+
+The worker supports different environments:
+- **Development**: Basic configuration for local testing
+- **Staging**: Pre-production environment with staging API
+- **Production**: Live environment with production API
+
+### Custom Domains
+
+To use a custom domain:
+
+1. **Add Custom Domain in Cloudflare Dashboard**:
+   - Go to Workers & Pages
+   - Select your worker
+   - Add custom domain
+
+2. **Update DNS Records**:
+   - Point your domain to Cloudflare's nameservers
+   - Create CNAME record pointing to your worker
 
 ## Troubleshooting
 
-### Build Failures
-- Check that all environment variables are set
-- Verify Node.js version is 18
-- Ensure build command is correct
+### Common Issues
 
-### Environment Variables Not Working
-- Make sure variables are prefixed with `VITE_`
-- Check that variables are set for the correct environment (Production/Preview)
-- Restart the build after adding new variables
+1. **Build Failures**:
+   ```bash
+   # Clean and rebuild
+   rm -rf dist node_modules
+   npm install
+   npm run build
+   ```
 
-### Deployment Not Triggering
-- Verify GitHub repository is connected
-- Check that you're pushing to the correct branch
-- Ensure Cloudflare Pages project is active
+2. **Deployment Errors**:
+   ```bash
+   # Check wrangler configuration
+   wrangler whoami
+   wrangler config
+   ```
 
-## URLs
+3. **Environment Variables Not Working**:
+   - Ensure variables are properly set in `wrangler.toml`
+   - Rebuild and redeploy after changes
 
-After deployment, your site will be available at:
-- **Production**: `https://cruiser-aviation-frontend.pages.dev`
-- **Preview**: `https://[commit-hash].cruiser-aviation-frontend.pages.dev`
+### Development Workflow
 
-## Next Steps
+1. **Local Development**:
+   ```bash
+   npm run dev
+   ```
 
-1. Set up your backend API and update `VITE_API_URL`
-2. Configure Firebase project and add credentials
-3. Set up Veriff integration and add public key
-4. Test the deployment with a small change 
+2. **Worker Development**:
+   ```bash
+   npm run worker:dev
+   ```
+
+3. **Testing Deployment**:
+   ```bash
+   npm run deploy:staging
+   ```
+
+## Monitoring and Analytics
+
+### Cloudflare Analytics
+- View worker performance in Cloudflare Dashboard
+- Monitor request volume and response times
+- Track error rates and edge locations
+
+### Custom Monitoring
+Add custom headers or logging to track specific metrics:
+
+```typescript
+// In worker.ts
+response.headers.set('X-Cache-Status', 'HIT')
+```
+
+## Security Considerations
+
+1. **Environment Variables**: Never commit sensitive data to version control
+2. **CORS**: Configure CORS headers for API requests
+3. **Rate Limiting**: Implement rate limiting for API endpoints
+4. **Authentication**: Ensure proper authentication for admin routes
+
+## Performance Optimization
+
+1. **Asset Caching**: Static assets are cached for 1 year
+2. **HTML Caching**: HTML files cached for 1 hour
+3. **Compression**: Automatic gzip compression
+4. **CDN**: Global edge distribution
+
+## Cost Optimization
+
+1. **Request Volume**: Monitor request counts
+2. **CPU Time**: Optimize worker execution time
+3. **Bandwidth**: Compress assets and optimize images
+4. **KV Storage**: Use KV for dynamic data if needed 
