@@ -60,4 +60,4 @@ jobs:
           projectName: cruiser-aviation-frontend
           directory: packages/frontend/dist
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
-          environmentName: production 
+          wranglerVersion: 2 
