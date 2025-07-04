@@ -48,12 +48,11 @@ jobs:
           VITE_ENABLE_VERIFF: ${{ secrets.VITE_ENABLE_VERIFF || 'false' }}
           VITE_ENABLE_ANALYTICS: ${{ secrets.VITE_ENABLE_ANALYTICS || 'false' }}
 
-      - name: Deploy to Cloudflare Pages (Preview)
+      - name: Deploy to Cloudflare Pages
         uses: cloudflare/pages-action@v1
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           projectName: cruiser-aviation-frontend
           directory: packages/frontend/dist
-          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
           wranglerVersion: 2 

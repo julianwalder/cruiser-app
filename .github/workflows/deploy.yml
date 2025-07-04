@@ -59,5 +59,4 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           projectName: cruiser-aviation-frontend
           directory: packages/frontend/dist
-          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
           wranglerVersion: 2 
