@@ -1,0 +1,80 @@
+name: Deploy to Cloudflare Workers
+
+on:
+  push:
+    branches: [dev, master]
+  pull_request:
+    branches: [dev, master]
+
+env:
+  NODE_VERSION: '18'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: packages/frontend/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          cd packages/frontend
+          npm ci
+
+      - name: Build application
+        run: |
+          cd packages/frontend
+          npm run build
+        env:
+          VITE_API_URL: ${{ github.ref == 'refs/heads/master' && 'https://api.cruiseraviation.com' || 'https://staging-api.cruiseraviation.com' }}
+          VITE_APP_NAME: ${{ github.ref == 'refs/heads/master' && 'Cruiser Aviation' || 'Cruiser Aviation (Staging)' }}
+          VITE_APP_VERSION: '1.0.0'
+          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
+          VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
+          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
+          VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
+          VITE_FIREBASE_MEASUREMENT_ID: ${{ secrets.VITE_FIREBASE_MEASUREMENT_ID }}
+          VITE_ENVIRONMENT: ${{ github.ref == 'refs/heads/master' && 'production' || 'staging' }}
+          VITE_DEBUG: ${{ github.ref == 'refs/heads/master' && 'false' || 'true' }}
+
+      - name: Deploy to Cloudflare Workers
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy
+          packageManager: npm
+          workingDirectory: packages/frontend
+          environment: ${{ github.ref == 'refs/heads/master' && 'production' || 'staging' }}
+
+      - name: Comment deployment URL
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const environment = '${{ github.ref == "refs/heads/master" && "production" || "staging" }}';
+            const workerName = environment === 'production' ? 'cruiser-aviation-frontend' : 'cruiser-aviation-frontend-staging';
+            const url = `https://${workerName}.${context.payload.repository.owner}.workers.dev`;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `🚀 **Deployment Complete!**
+              
+              **Environment:** ${environment}
+              **URL:** ${url}
+              **Branch:** ${context.payload.pull_request.head.ref}
+              
+              Your changes have been deployed successfully!`
+            }); 
