@@ -16,7 +16,8 @@
     "deploy:production": "wrangler deploy --env production",
     "deploy:dev": "wrangler deploy",
     "worker:dev": "wrangler dev",
-    "worker:build": "wrangler build"
+    "worker:build": "wrangler build",
+    "setup:cloudflare-vars": "./scripts/setup-cloudflare-vars.sh"
   },
   "dependencies": {
     "@cloudflare/kv-asset-handler": "^0.3.0",

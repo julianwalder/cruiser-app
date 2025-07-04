@@ -1,91 +1,87 @@
-import { getAssetFromKV } from '@cloudflare/kv-asset-handler'
+import { getAssetFromKV, mapRequestToAsset } from '@cloudflare/kv-asset-handler';
 
-/**
- * The DEBUG flag will do two things that help during development:
- * 1. we will skip caching on the edge, which makes it easier to
- *    debug.
- * 2. we will return an error message on exception in your Response,
- *    rather than the default 404.html page.
- */
-const DEBUG = false
-
-addEventListener('fetch', (event: any) => {
-  try {
-    event.respondWith(handleEvent(event))
-  } catch (e: any) {
-    if (DEBUG) {
-      return event.respondWith(
-        new Response(e.message || e.toString(), {
-          status: 500,
-        }),
-      )
-    }
-    event.respondWith(new Response('Internal Error', { status: 500 }))
-  }
-})
-
-async function handleEvent(event: FetchEvent): Promise<Response> {
-  const url = new URL(event.request.url)
-  let options: any = {}
-
-  /**
-   * You can add custom logic to how we fetch your assets
-   * by configuring the function `mapRequestToAsset`
-   */
-  // options.mapRequestToAsset = req => new Request(`${new URL(req.url).origin}/index.html`, req)
-
-  try {
-    if (DEBUG) {
-      // customize caching
-      options.cacheControl = {
-        bypassCache: true,
-      }
-    }
-    
-    // Check if the request is for a static asset
-    const asset = await getAssetFromKV(event, options)
-    
-    // Add cache headers for static assets
-    const response = new Response(asset.body, asset)
-    
-    // Cache static assets for 1 year
-    if (url.pathname.match(/\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot)$/)) {
-      response.headers.set('Cache-Control', 'public, max-age=31536000, immutable')
-    } else {
-      // Cache HTML and other files for 1 hour
-      response.headers.set('Cache-Control', 'public, max-age=3600')
-    }
-    
-    return response
-
-  } catch (e) {
-    // if an error is thrown try to serve the asset at 404.html
-    if (!DEBUG) {
-      try {
-        let notFoundResponse = await getAssetFromKV(event, {
-          mapRequestToAsset: req => new Request(`${new URL(req.url).origin}/index.html`, req),
-        })
-
-        return new Response(notFoundResponse.body, { ...notFoundResponse, status: 200 })
-      } catch (e) {}
-    }
-
-    return new Response(`Not found: ${url.pathname}`, { status: 404 })
-  }
+interface Env {
+  __STATIC_CONTENT: KVNamespace;
+  VITE_API_URL: string;
+  VITE_APP_NAME: string;
+  VITE_APP_VERSION: string;
+  VITE_FIREBASE_API_KEY: string;
+  VITE_FIREBASE_AUTH_DOMAIN: string;
+  VITE_FIREBASE_PROJECT_ID: string;
+  VITE_FIREBASE_STORAGE_BUCKET: string;
+  VITE_FIREBASE_MESSAGING_SENDER_ID: string;
+  VITE_FIREBASE_APP_ID: string;
+  VITE_FIREBASE_MEASUREMENT_ID: string;
+  VITE_ENVIRONMENT: string;
+  VITE_DEBUG: string;
 }
 
-/**
- * Here's one example of how to modify a request to
- * allow you to serve a single page app while being
- * able to cache your assets at the edge.
- */
-function mapRequestToAsset(req: Request): Request {
-  const url = new URL(req.url)
-  
-  // If the request is for a file that doesn't exist, serve index.html
-  if (!url.pathname.includes('.')) {
-    return new Request(`${url.origin}/index.html`, req)
-  }
-  
-  return req
-} 
+export default {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+    const url = new URL(request.url);
+    
+    // Handle API requests (proxy to backend)
+    if (url.pathname.startsWith('/api/')) {
+      const apiUrl = env.VITE_API_URL || 'https://api.cruiseraviation.com';
+      const apiRequest = new Request(`${apiUrl}${url.pathname}${url.search}`, {
+        method: request.method,
+        headers: request.headers,
+        body: request.body,
+      });
+      
+      try {
+        const response = await fetch(apiRequest);
+        return response;
+      } catch (error) {
+        return new Response('API Error', { status: 500 });
+      }
+    }
+
+    // Handle static assets
+    try {
+      const asset = await getAssetFromKV(
+        {
+          request,
+          waitUntil: ctx.waitUntil.bind(ctx),
+        },
+        {
+          ASSET_NAMESPACE: env.__STATIC_CONTENT,
+          ASSET_MANIFEST: {},
+          mapRequestToAsset: (req: Request) => {
+            // Handle SPA routing - serve index.html for all non-asset routes
+            const url = new URL(req.url);
+            if (!url.pathname.includes('.') && !url.pathname.startsWith('/api/')) {
+              return new Request(`${url.origin}/index.html`, req);
+            }
+            return req;
+          },
+        }
+      );
+
+      // Add cache headers for static assets
+      const response = new Response(asset.body, asset);
+      response.headers.set('Cache-Control', 'public, max-age=31536000, immutable');
+      return response;
+    } catch (e) {
+      // If asset not found, serve index.html for SPA routing
+      if (e instanceof Error && e.message.includes('not found')) {
+        try {
+          const indexAsset = await getAssetFromKV(
+            {
+              request: new Request(`${url.origin}/index.html`),
+              waitUntil: ctx.waitUntil.bind(ctx),
+            },
+            {
+              ASSET_NAMESPACE: env.__STATIC_CONTENT,
+              ASSET_MANIFEST: {},
+            }
+          );
+          return new Response(indexAsset.body, indexAsset);
+        } catch (indexError) {
+          return new Response('Not Found', { status: 404 });
+        }
+      }
+      return new Response('Internal Error', { status: 500 });
+    }
+  },
+};
