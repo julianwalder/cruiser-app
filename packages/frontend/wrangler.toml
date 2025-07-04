@@ -6,4 +6,7 @@ compatibility_date = "2024-01-01"
 name = "cruiser-aviation-frontend"
 
 [env.staging]
-name = "cruiser-aviation-frontend-staging" 
+name = "cruiser-aviation-frontend-staging"
+
+[env.preview]
+name = "cruiser-aviation-frontend-preview" 
