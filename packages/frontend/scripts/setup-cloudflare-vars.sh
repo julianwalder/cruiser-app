@@ -17,36 +17,116 @@ PRODUCTION_WORKER="cruiser-aviation-frontend"
 STAGING_WORKER="cruiser-aviation-frontend-staging"
 
 # Default environment variables (will be overridden by .env files if they exist)
-declare -A PROD_VARS=(
-    ["VITE_API_URL"]="https://api.cruiseraviation.com"
-    ["VITE_APP_NAME"]="Cruiser Aviation"
-    ["VITE_APP_VERSION"]="1.0.0"
-    ["VITE_FIREBASE_API_KEY"]="AIzaSyChijXhZBr7ycWKEQSK1bCdLSoQioKEurk"
-    ["VITE_FIREBASE_AUTH_DOMAIN"]="cruiserapp-b8429.firebaseapp.com"
-    ["VITE_FIREBASE_PROJECT_ID"]="cruiserapp-b8429"
-    ["VITE_FIREBASE_STORAGE_BUCKET"]="cruiserapp-b8429.firebasestorage.app"
-    ["VITE_FIREBASE_MESSAGING_SENDER_ID"]="123456789012"
-    ["VITE_FIREBASE_APP_ID"]="1:123456789012:web:abcdef1234567890"
-    ["VITE_FIREBASE_MEASUREMENT_ID"]="G-XXXXXXXXXX"
+# Using simple arrays instead of associative arrays for better compatibility
+PROD_VARS_KEYS=(
+    "VITE_API_URL"
+    "VITE_APP_NAME"
+    "VITE_APP_VERSION"
+    "VITE_FIREBASE_API_KEY"
+    "VITE_FIREBASE_AUTH_DOMAIN"
+    "VITE_FIREBASE_PROJECT_ID"
+    "VITE_FIREBASE_STORAGE_BUCKET"
+    "VITE_FIREBASE_MESSAGING_SENDER_ID"
+    "VITE_FIREBASE_APP_ID"
+    "VITE_FIREBASE_MEASUREMENT_ID"
 )
 
-declare -A STAGING_VARS=(
-    ["VITE_API_URL"]="https://staging-api.cruiseraviation.com"
-    ["VITE_APP_NAME"]="Cruiser Aviation (Staging)"
-    ["VITE_APP_VERSION"]="1.0.0"
-    ["VITE_FIREBASE_API_KEY"]="AIzaSyChijXhZBr7ycWKEQSK1bCdLSoQioKEurk"
-    ["VITE_FIREBASE_AUTH_DOMAIN"]="cruiserapp-b8429.firebaseapp.com"
-    ["VITE_FIREBASE_PROJECT_ID"]="cruiserapp-b8429"
-    ["VITE_FIREBASE_STORAGE_BUCKET"]="cruiserapp-b8429.firebasestorage.app"
-    ["VITE_FIREBASE_MESSAGING_SENDER_ID"]="123456789012"
-    ["VITE_FIREBASE_APP_ID"]="1:123456789012:web:abcdef1234567890"
-    ["VITE_FIREBASE_MEASUREMENT_ID"]="G-XXXXXXXXXX"
+PROD_VARS_VALUES=(
+    "https://api.cruiseraviation.com"
+    "Cruiser Aviation"
+    "1.0.0"
+    "AIzaSyChijXhZBr7ycWKEQSK1bCdLSoQioKEurk"
+    "cruiserapp-b8429.firebaseapp.com"
+    "cruiserapp-b8429"
+    "cruiserapp-b8429.firebasestorage.app"
+    "123456789012"
+    "1:123456789012:web:abcdef1234567890"
+    "G-XXXXXXXXXX"
 )
+
+STAGING_VARS_KEYS=(
+    "VITE_API_URL"
+    "VITE_APP_NAME"
+    "VITE_APP_VERSION"
+    "VITE_FIREBASE_API_KEY"
+    "VITE_FIREBASE_AUTH_DOMAIN"
+    "VITE_FIREBASE_PROJECT_ID"
+    "VITE_FIREBASE_STORAGE_BUCKET"
+    "VITE_FIREBASE_MESSAGING_SENDER_ID"
+    "VITE_FIREBASE_APP_ID"
+    "VITE_FIREBASE_MEASUREMENT_ID"
+)
+
+STAGING_VARS_VALUES=(
+    "https://staging-api.cruiseraviation.com"
+    "Cruiser Aviation (Staging)"
+    "1.0.0"
+    "AIzaSyChijXhZBr7ycWKEQSK1bCdLSoQioKEurk"
+    "cruiserapp-b8429.firebaseapp.com"
+    "cruiserapp-b8429"
+    "cruiserapp-b8429.firebasestorage.app"
+    "123456789012"
+    "1:123456789012:web:abcdef1234567890"
+    "G-XXXXXXXXXX"
+)
+
+# Function to get variable value by key
+get_var_value() {
+    local key=$1
+    local keys_array_name=$2
+    local values_array_name=$3
+    
+    # Get the array names as strings
+    local keys_array="${keys_array_name}[@]"
+    local values_array="${values_array_name}[@]"
+    
+    # Convert to arrays
+    local keys=("${!keys_array}")
+    local values=("${!values_array}")
+    
+    # Find the index of the key
+    for i in "${!keys[@]}"; do
+        if [[ "${keys[$i]}" == "$key" ]]; then
+            echo "${values[$i]}"
+            return 0
+        fi
+    done
+    echo ""
+}
+
+# Function to set variable value by key
+set_var_value() {
+    local key=$1
+    local value=$2
+    local keys_array_name=$3
+    local values_array_name=$4
+    
+    # Get the array names as strings
+    local keys_array="${keys_array_name}[@]"
+    local values_array="${values_array_name}[@]"
+    
+    # Convert to arrays
+    local keys=("${!keys_array}")
+    local values=("${!values_array}")
+    
+    # Find the index of the key and update it
+    for i in "${!keys[@]}"; do
+        if [[ "${keys[$i]}" == "$key" ]]; then
+            eval "${values_array_name}[$i]=\"$value\""
+            return 0
+        fi
+    done
+    
+    # If key not found, add it
+    eval "${keys_array_name}+=(\"$key\")"
+    eval "${values_array_name}+=(\"$value\")"
+}
 
 # Function to load variables from .env file
 load_env_file() {
     local env_file=$1
-    local -n vars_array=$2
+    local keys_array_name=$2
+    local values_array_name=$3
     
     if [[ -f "$env_file" ]]; then
         echo -e "${BLUE}Loading variables from ${env_file}...${NC}"
@@ -55,7 +135,7 @@ load_env_file() {
             if [[ ! "$key" =~ ^#.*$ ]] && [[ -n "$key" ]]; then
                 # Remove quotes from value
                 value=$(echo "$value" | sed 's/^["'\'']//;s/["'\'']$//')
-                vars_array["$key"]="$value"
+                set_var_value "$key" "$value" "$keys_array_name" "$values_array_name"
                 echo -e "  ${GREEN}Loaded: ${key}=${value}${NC}"
             fi
         done < "$env_file"
@@ -67,7 +147,8 @@ load_env_file() {
 # Function to prompt for missing variables
 prompt_for_missing_vars() {
     local env_name=$1
-    local -n vars_array=$2
+    local keys_array_name=$2
+    local values_array_name=$3
     
     echo -e "\n${BLUE}Checking for missing variables in ${env_name}...${NC}"
     
@@ -81,11 +162,12 @@ prompt_for_missing_vars() {
     )
     
     for var in "${required_vars[@]}"; do
-        if [[ -z "${vars_array[$var]}" ]]; then
+        local current_value=$(get_var_value "$var" "$keys_array_name" "$values_array_name")
+        if [[ -z "$current_value" ]]; then
             echo -e "${YELLOW}⚠️  ${var} is missing for ${env_name}${NC}"
             read -p "Enter value for ${var}: " value
             if [[ -n "$value" ]]; then
-                vars_array["$var"]="$value"
+                set_var_value "$var" "$value" "$keys_array_name" "$values_array_name"
                 echo -e "${GREEN}✅ ${var} set to: ${value}${NC}"
             fi
         fi
@@ -112,23 +194,33 @@ fi
 echo -e "${GREEN}✅ Wrangler CLI is installed and you're logged in${NC}"
 
 # Load environment variables from .env files
-load_env_file ".env.production" PROD_VARS
-load_env_file ".env.staging" STAGING_VARS
+load_env_file ".env.production" "PROD_VARS_KEYS" "PROD_VARS_VALUES"
+load_env_file ".env.staging" "STAGING_VARS_KEYS" "STAGING_VARS_VALUES"
 
 # Prompt for any missing required variables
-prompt_for_missing_vars "production" PROD_VARS
-prompt_for_missing_vars "staging" STAGING_VARS
+prompt_for_missing_vars "production" "PROD_VARS_KEYS" "PROD_VARS_VALUES"
+prompt_for_missing_vars "staging" "STAGING_VARS_KEYS" "STAGING_VARS_VALUES"
 
 # Function to set variables for an environment
 set_variables_for_env() {
     local worker_name=$1
     local env_name=$2
-    local -n vars=$3
+    local keys_array_name=$3
+    local values_array_name=$4
     
     echo -e "\n${BLUE}Setting up ${env_name} environment variables for ${worker_name}...${NC}"
     
-    for key in "${!vars[@]}"; do
-        local value="${vars[$key]}"
+    # Get the array names as strings
+    local keys_array="${keys_array_name}[@]"
+    local values_array="${values_array_name}[@]"
+    
+    # Convert to arrays
+    local keys=("${!keys_array}")
+    local values=("${!values_array}")
+    
+    for i in "${!keys[@]}"; do
+        local key="${keys[$i]}"
+        local value="${values[$i]}"
         echo -e "  ${YELLOW}Setting ${key}...${NC}"
         
         if wrangler secret put "$key" --env "$env_name" <<< "$value" 2>/dev/null; then
@@ -216,10 +308,10 @@ done
 case $ACTION in
     "setup")
         echo -e "\n${BLUE}Setting up Production Environment...${NC}"
-        set_variables_for_env "$PRODUCTION_WORKER" "production" PROD_VARS
+        set_variables_for_env "$PRODUCTION_WORKER" "production" "PROD_VARS_KEYS" "PROD_VARS_VALUES"
         
         echo -e "\n${BLUE}Setting up Staging Environment...${NC}"
-        set_variables_for_env "$STAGING_WORKER" "staging" STAGING_VARS
+        set_variables_for_env "$STAGING_WORKER" "staging" "STAGING_VARS_KEYS" "STAGING_VARS_VALUES"
         
         # List current variables
         echo -e "\n${BLUE}Listing current variables...${NC}"
