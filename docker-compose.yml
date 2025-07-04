@@ -1,0 +1,91 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: cruiser_postgres
+    environment:
+      POSTGRES_DB: cruiser_aviation
+      POSTGRES_USER: cruiser_user
+      POSTGRES_PASSWORD: cruiser_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - cruiser_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cruiser_user -d cruiser_aviation"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Redis for background jobs
+  redis:
+    image: redis:7-alpine
+    container_name: cruiser_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - cruiser_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Backend API
+  backend:
+    build:
+      context: ./packages/backend
+      dockerfile: Dockerfile
+    container_name: cruiser_backend
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://cruiser_user:cruiser_password@postgres:5432/cruiser_aviation
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      PORT: 3001
+    ports:
+      - "3001:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - cruiser_network
+    volumes:
+      - ./packages/backend:/app
+      - /app/node_modules
+    command: npm run start:dev
+
+  # Frontend
+  frontend:
+    build:
+      context: ./packages/frontend
+      dockerfile: Dockerfile
+    container_name: cruiser_frontend
+    environment:
+      VITE_API_URL: http://localhost:3001
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - cruiser_network
+    volumes:
+      - ./packages/frontend:/app
+      - /app/node_modules
+    command: npm run dev
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  cruiser_network:
+    driver: bridge 

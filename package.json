@@ -1,0 +1,41 @@
+{
+  "name": "cruiser-aviation-platform",
+  "version": "1.0.0",
+  "description": "Modern web and mobile application to manage operations of Cruiser Aviation flight school and aircraft rental business",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "cd packages/backend && npm run start:dev",
+    "dev:frontend": "cd packages/frontend && npm run dev",
+    "build": "npm run build:backend && npm run build:frontend",
+    "build:backend": "cd packages/backend && npm run build",
+    "build:frontend": "cd packages/frontend && npm run build",
+    "install:all": "npm install && cd packages/backend && npm install && cd ../frontend && npm install",
+    "setup": "npm run install:all && npm run setup:db",
+    "setup:db": "cd packages/backend && npm run migration:run",
+    "test": "npm run test:backend && npm run test:frontend",
+    "test:backend": "cd packages/backend && npm run test",
+    "test:frontend": "cd packages/frontend && npm run test"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "keywords": [
+    "aviation",
+    "flight-school",
+    "aircraft-rental",
+    "nestjs",
+    "react",
+    "typescript"
+  ],
+  "author": "Cruiser Aviation",
+  "license": "MIT"
+} 
