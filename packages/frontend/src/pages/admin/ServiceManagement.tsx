@@ -269,12 +269,12 @@ const ServiceManagement: React.FC<ServiceManagementProps> = ({ userRole = 'user'
             {isAdmin ? 'Service Management' : 'Available Services'}
           </h2>
           {isAdmin && (
-            <button
-              onClick={() => setShowAddServiceModal(true)}
-              className="px-4 py-2 bg-black text-white rounded-md text-sm hover:bg-gray-800"
-            >
-              Add Service
-            </button>
+          <button
+            onClick={() => setShowAddServiceModal(true)}
+            className="px-4 py-2 bg-black text-white rounded-md text-sm hover:bg-gray-800"
+          >
+            Add Service
+          </button>
           )}
         </div>
       </div>
@@ -359,18 +359,18 @@ const ServiceManagement: React.FC<ServiceManagementProps> = ({ userRole = 'user'
                       </button>
                       {isAdmin && (
                         <>
-                          <button
-                            onClick={() => handleEditService(service)}
-                            className="text-gray-600 hover:text-gray-800 font-medium"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => handleDeleteService(service)}
-                            className="text-red-600 hover:text-red-800 font-medium"
-                          >
-                            Delete
-                          </button>
+                      <button
+                        onClick={() => handleEditService(service)}
+                        className="text-gray-600 hover:text-gray-800 font-medium"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDeleteService(service)}
+                        className="text-red-600 hover:text-red-800 font-medium"
+                      >
+                        Delete
+                      </button>
                         </>
                       )}
                     </div>
