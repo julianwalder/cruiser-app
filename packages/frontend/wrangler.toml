@@ -1,19 +1,53 @@
+# Main configuration (production by default)
 main = "src/worker.ts"
-name = "cruiser-aviation-frontend-prod"
+name = "cruiser-aviation-frontend"
 compatibility_date = "2024-01-01"
 
 [observability.logs]
 enabled = false
 
-# Global settings for all environments
 [triggers]
 crons = []
 
-# Ensure consistent build settings
 [build]
 command = "npm run build"
 cwd = "."
 
+# Production environment (default)
+[[d1_databases]]
+binding = "DB"
+database_name = "cruiser-db-prod"
+database_id = "6f01752f-dcac-45fb-a313-aca93c9edad0"
+
+[[r2_buckets]]
+binding = "STORAGE"
+bucket_name = "cruiser-storage-prod"
+
+[[kv_namespaces]]
+binding = "CACHE"
+id = "f10d38b010894c3a8e75c77d2b0ae6a9"
+
+[[kv_namespaces]]
+binding = "STATIC_CONTENT"
+id = "679667a04c0b4beeb88579cbeacce07e"
+
+[vars]
+VITE_API_URL = "https://api.cruiseraviation.com"
+VITE_APP_NAME = "Cruiser Aviation"
+VITE_APP_VERSION = "1.0.0"
+VITE_FIREBASE_API_KEY = "AIzaSyChijXhZBr7ycWKEQSK1bCdLSoQioKEurk"
+VITE_FIREBASE_AUTH_DOMAIN = "cruiserapp-b8429.firebaseapp.com"
+VITE_FIREBASE_PROJECT_ID = "cruiserapp-b8429"
+VITE_FIREBASE_STORAGE_BUCKET = "cruiserapp-b8429.firebasestorage.app"
+VITE_FIREBASE_MESSAGING_SENDER_ID = "443919130210"
+VITE_FIREBASE_APP_ID = "1:443919130210:web:b8a009ef9ca1ca4f433b3b"
+VITE_FIREBASE_MEASUREMENT_ID = "G-BCDHQJ67Z0"
+VITE_ENVIRONMENT = "production"
+VITE_DEBUG = "false"
+VITE_CLOUDFLARE_ACCESS_AUD = "https://cruiseraviation.com"
+VITE_CLOUDFLARE_ACCESS_TEAM_DOMAIN = "cruiseraviation.com"
+
+# Staging environment
 [env.staging]
 name = "cruiser-aviation-frontend-staging"
 main = "src/worker.ts"
@@ -21,9 +55,12 @@ main = "src/worker.ts"
 [env.staging.observability.logs]
 enabled = false
 
-# Staging-specific settings
 [env.staging.triggers]
 crons = []
+
+[env.staging.build]
+command = "npm run build"
+cwd = "."
 
 [[env.staging.kv_namespaces]]
 binding = "CACHE"
@@ -42,7 +79,6 @@ database_id = "73665fa6-b020-45ba-899c-e495344a4ee3"
 binding = "STORAGE"
 bucket_name = "cruiser-storage-staging"
 
-# Staging environment variables
 [env.staging.vars]
 VITE_API_URL = "https://staging-api.cruiseraviation.com"
 VITE_APP_NAME = "Cruiser Aviation (Staging)"
@@ -56,62 +92,10 @@ VITE_FIREBASE_APP_ID = "1:443919130210:web:b8a009ef9ca1ca4f433b3b"
 VITE_FIREBASE_MEASUREMENT_ID = "G-BCDHQJ67Z0"
 VITE_ENVIRONMENT = "staging"
 VITE_DEBUG = "true"
-
-# Cloudflare Access configuration
 VITE_CLOUDFLARE_ACCESS_AUD = "https://staging.cruiseraviation.com"
 VITE_CLOUDFLARE_ACCESS_TEAM_DOMAIN = "cruiseraviation.com"
 
-# JWT Secret for staging
-[env.staging.secrets]
-JWT_SECRET = "staging-jwt-secret-2024"
-
-[env.production]
-name = "cruiser-aviation-frontend"
-main = "src/worker.ts"
-
-[env.production.observability.logs]
-enabled = false
-
-# Production-specific settings
-[env.production.triggers]
-crons = []
-
-[[env.production.d1_databases]]
-binding = "DB"
-database_name = "cruiser-db-prod"
-database_id = "6f01752f-dcac-45fb-a313-aca93c9edad0"
-
-[[env.production.r2_buckets]]
-binding = "STORAGE"
-bucket_name = "cruiser-storage-prod"
-
-[[env.production.kv_namespaces]]
-binding = "CACHE"
-id = "f10d38b010894c3a8e75c77d2b0ae6a9"
-
-[[env.production.kv_namespaces]]
-binding = "STATIC_CONTENT"
-id = "679667a04c0b4beeb88579cbeacce07e"
-
-# Production environment variables
-[env.production.vars]
-VITE_API_URL = "https://api.cruiseraviation.com"
-VITE_APP_NAME = "Cruiser Aviation"
-VITE_APP_VERSION = "1.0.0"
-VITE_FIREBASE_API_KEY = "AIzaSyChijXhZBr7ycWKEQSK1bCdLSoQioKEurk"
-VITE_FIREBASE_AUTH_DOMAIN = "cruiserapp-b8429.firebaseapp.com"
-VITE_FIREBASE_PROJECT_ID = "cruiserapp-b8429"
-VITE_FIREBASE_STORAGE_BUCKET = "cruiserapp-b8429.firebasestorage.app"
-VITE_FIREBASE_MESSAGING_SENDER_ID = "443919130210"
-VITE_FIREBASE_APP_ID = "1:443919130210:web:b8a009ef9ca1ca4f433b3b"
-VITE_FIREBASE_MEASUREMENT_ID = "G-BCDHQJ67Z0"
-VITE_ENVIRONMENT = "production"
-VITE_DEBUG = "false"
-
-# Cloudflare Access configuration
-VITE_CLOUDFLARE_ACCESS_AUD = "https://cruiseraviation.com"
-VITE_CLOUDFLARE_ACCESS_TEAM_DOMAIN = "cruiseraviation.com"
-
+# Local development environment
 [env.local]
 name = "cruiser-aviation-frontend-local"
 main = "src/worker.ts"
@@ -119,9 +103,12 @@ main = "src/worker.ts"
 [env.local.observability.logs]
 enabled = false
 
-# Local-specific settings
 [env.local.triggers]
 crons = []
+
+[env.local.build]
+command = "npm run build"
+cwd = "."
 
 [[env.local.d1_databases]]
 binding = "DB"
@@ -140,11 +127,6 @@ id = "b9b4a8aa1da64f3696c4778e03642cb8"
 binding = "STATIC_CONTENT"
 id = "cde2db60fa8947d79a44b0869a5f8995"
 
-# Cloudflare Access JWT secret (disabled for local development)
-[env.local.secrets]
-JWT_SECRET = "local-development-secret"
-
-# Local development vars
 [env.local.vars]
 VITE_API_URL = "http://localhost:8787"
 VITE_APP_NAME = "Cruiser Aviation (Local)"
@@ -158,10 +140,9 @@ VITE_FIREBASE_STORAGE_BUCKET = "cruiserapp-b8429.firebasestorage.app"
 VITE_FIREBASE_MESSAGING_SENDER_ID = "443919130210"
 VITE_FIREBASE_APP_ID = "1:443919130210:web:b8a009ef9ca1ca4f433b3b"
 VITE_FIREBASE_MEASUREMENT_ID = "G-BCDHQJ67Z0"
-
-# Cloudflare Access configuration (disabled for local development)
 VITE_CLOUDFLARE_ACCESS_AUD = ""
 VITE_CLOUDFLARE_ACCESS_TEAM_DOMAIN = ""
 
+# Site configuration for static assets
 [site]
 bucket = "./dist" 

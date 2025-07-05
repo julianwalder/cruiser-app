@@ -23,12 +23,6 @@ VITE_FIREBASE_MEASUREMENT_ID = ""
 VITE_CLOUDFLARE_ACCESS_AUD = ""
 VITE_CLOUDFLARE_ACCESS_TEAM_DOMAIN = ""
 
-# Default environment bindings (used by Cloudflare Pages)
-[[d1_databases]]
-binding = "DB"
-database_name = "cruiser-db-prod"
-database_id = "4e925626-5ce3-4f0a-ad1b-e38a45068d5e"
-
 # Additional D1 databases for population scripts
 [[d1_databases]]
 binding = "DB_STAGING"
