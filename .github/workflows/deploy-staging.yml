@@ -33,7 +33,7 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: deploy --env staging
-          workingDirectory: packages/frontend
+          workingDirectory: .
           
       - name: Notify deployment
         run: |
