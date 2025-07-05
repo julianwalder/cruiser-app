@@ -112,64 +112,30 @@ export default {
       }
     }
     
-    // For staging/production, serve from KV
+    // For staging/production, serve from site assets using getAssetFromKV
     try {
-      // Determine the asset path
-      let assetPath = url.pathname;
-      
-      // Handle SPA routing - serve index.html for all non-asset routes
-      if (!assetPath.includes('.') && !assetPath.startsWith('/api/')) {
-        assetPath = '/index.html';
-      }
-      
-      // Remove leading slash for KV lookup
-      const key = assetPath.startsWith('/') ? assetPath.slice(1) : assetPath;
-      
-      // Debug logging
-      console.log('Looking for asset with key:', key);
-      console.log('Environment:', env.VITE_ENVIRONMENT);
-      console.log('Static content binding available:', !!bindings.STATIC_CONTENT);
-      
-      // Try to get the asset from KV
-      const asset = await bindings.STATIC_CONTENT?.get(key, { type: 'arrayBuffer' });
-      
-      if (!asset) {
-        // If asset not found, try index.html for SPA routing
-        if (assetPath !== '/index.html') {
-          const indexAsset = await bindings.STATIC_CONTENT?.get('index.html', { type: 'arrayBuffer' });
-          if (indexAsset) {
-            return new Response(indexAsset, {
-              headers: {
-                'Content-Type': 'text/html',
-                'Cache-Control': 'public, max-age=31536000, immutable',
-              },
-            });
-          }
-        }
-        return new Response('Not Found', { status: 404 });
-      }
-      
-      // Determine content type based on file extension
-      let contentType = 'text/plain';
-      if (key.endsWith('.html')) contentType = 'text/html';
-      else if (key.endsWith('.css')) contentType = 'text/css';
-      else if (key.endsWith('.js')) contentType = 'application/javascript';
-      else if (key.endsWith('.json')) contentType = 'application/json';
-      else if (key.endsWith('.png')) contentType = 'image/png';
-      else if (key.endsWith('.jpg') || key.endsWith('.jpeg')) contentType = 'image/jpeg';
-      else if (key.endsWith('.svg')) contentType = 'image/svg+xml';
-      else if (key.endsWith('.ico')) contentType = 'image/x-icon';
-      
-      // Return the asset with appropriate headers
-      return new Response(asset, {
-        headers: {
-          'Content-Type': contentType,
-          'Cache-Control': 'public, max-age=31536000, immutable',
+      // Use getAssetFromKV to handle asset serving with proper fallbacks
+      const response = await getAssetFromKV(
+        {
+          request,
+          waitUntil: ctx.waitUntil.bind(ctx),
         },
-      });
+        {
+          ASSET_NAMESPACE: bindings.STATIC_CONTENT,
+          ASSET_MANIFEST: {},
+          cacheControl: {
+            browserTTL: 60 * 60 * 24 * 365, // 1 year
+            edgeTTL: 60 * 60 * 24 * 365, // 1 year
+            bypassCache: false,
+          },
+        }
+      );
+      
+      return response;
     } catch (e) {
+      // If getAssetFromKV fails, return a 404
       console.error('Error serving asset:', e);
-      return new Response('Internal Error', { status: 500 });
+      return new Response('Not Found', { status: 404 });
     }
   },
 };
