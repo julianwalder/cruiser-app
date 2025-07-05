@@ -1,5 +1,4 @@
-import { getAssetFromKV, mapRequestToAsset } from '@cloudflare/kv-asset-handler';
-import { SimpleAPI } from './api/simple-api';
+import { getAssetFromKV } from '@cloudflare/kv-asset-handler';
 
 interface Env {
   STATIC_CONTENT: KVNamespace;
@@ -27,16 +26,8 @@ export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
     
-    // Handle API requests with simple API
+    // Handle API requests - redirect to backend
     if (url.pathname.startsWith('/api/')) {
-      const api = new SimpleAPI(env);
-      const response = await api.handleRequest(request, url);
-      
-      if (response) {
-        return response;
-      }
-      
-      // Fallback to backend if not handled by edge API
       const apiUrl = env.VITE_API_URL || 'https://api.cruiseraviation.com';
       const apiRequest = new Request(`${apiUrl}${url.pathname}${url.search}`, {
         method: request.method,
@@ -54,42 +45,6 @@ export default {
 
     // Handle static assets
     try {
-      // Check if we're in development mode (no STATIC_CONTENT binding or empty namespace)
-      const isDevelopment = !env.STATIC_CONTENT || env.VITE_ENVIRONMENT === 'development';
-      
-      if (isDevelopment) {
-        // In development, serve a simple response indicating the app is running
-        return new Response(`
-          <!DOCTYPE html>
-          <html>
-            <head>
-              <title>Cruiser Aviation - Development</title>
-              <style>
-                body { font-family: Arial, sans-serif; padding: 40px; text-align: center; }
-                .container { max-width: 600px; margin: 0 auto; }
-                .status { color: #22c55e; font-weight: bold; }
-                .info { background: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0; }
-              </style>
-            </head>
-            <body>
-              <div class="container">
-                <h1>🚁 Cruiser Aviation Platform</h1>
-                <p class="status">✅ Worker is running in development mode</p>
-                <div class="info">
-                  <h3>Development Setup:</h3>
-                  <p><strong>Frontend:</strong> <a href="http://localhost:3000" target="_blank">http://localhost:3000</a></p>
-                  <p><strong>API Server:</strong> <a href="http://localhost:8787" target="_blank">http://localhost:8787</a></p>
-                  <p><strong>Environment:</strong> ${env.VITE_ENVIRONMENT || 'development'}</p>
-                </div>
-                <p>For full development experience, run both the frontend and API servers.</p>
-              </div>
-            </body>
-          </html>
-        `, {
-          headers: { 'Content-Type': 'text/html' }
-        });
-      }
-
       const asset = await getAssetFromKV(
         {
           request,
