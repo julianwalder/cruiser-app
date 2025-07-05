@@ -2,7 +2,7 @@ import { getAssetFromKV, mapRequestToAsset } from '@cloudflare/kv-asset-handler'
 import { SimpleAPI } from './api/simple-api';
 
 interface Env {
-  __STATIC_CONTENT: KVNamespace;
+  STATIC_CONTENT: KVNamespace;
   DB: D1Database;
   STORAGE: R2Bucket;
   CACHE: KVNamespace;
@@ -60,7 +60,7 @@ export default {
           waitUntil: ctx.waitUntil.bind(ctx),
         },
         {
-          ASSET_NAMESPACE: env.__STATIC_CONTENT,
+          ASSET_NAMESPACE: env.STATIC_CONTENT,
           ASSET_MANIFEST: {},
           mapRequestToAsset: (req: Request) => {
             // Handle SPA routing - serve index.html for all non-asset routes
@@ -87,7 +87,7 @@ export default {
               waitUntil: ctx.waitUntil.bind(ctx),
             },
             {
-              ASSET_NAMESPACE: env.__STATIC_CONTENT,
+              ASSET_NAMESPACE: env.STATIC_CONTENT,
               ASSET_MANIFEST: {},
             }
           );

@@ -20,7 +20,7 @@ binding = "CACHE"
 id = "b9b4a8aa1da64f3696c4778e03642cb8"
 
 [[env.staging.kv_namespaces]]
-binding = "__STATIC_CONTENT"
+binding = "STATIC_CONTENT"
 id = "b9b4a8aa1da64f3696c4778e03642cb8"
 
 # Staging environment variables
@@ -60,7 +60,7 @@ binding = "CACHE"
 id = "f10d38b010894c3a8e75c77d2b0ae6a9"
 
 [[env.production.kv_namespaces]]
-binding = "__STATIC_CONTENT"
+binding = "STATIC_CONTENT"
 id = "f10d38b010894c3a8e75c77d2b0ae6a9"
 
 # Production environment variables
@@ -100,7 +100,7 @@ binding = "CACHE"
 id = "b9b4a8aa1da64f3696c4778e03642cb8"
 
 [[env.local.kv_namespaces]]
-binding = "__STATIC_CONTENT"
+binding = "STATIC_CONTENT"
 id = "b9b4a8aa1da64f3696c4778e03642cb8"
 
 # Cloudflare Access JWT secret (disabled for local development)
