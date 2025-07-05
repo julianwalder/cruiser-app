@@ -40,7 +40,7 @@ id = "b9b4a8aa1da64f3696c4778e03642cb8"
 
 [[env.staging.kv_namespaces]]
 binding = "STATIC_CONTENT"
-id = "b9b4a8aa1da64f3696c4778e03642cb8"
+id = "bd25319670d844718fbae8ac0656e132"
 
 # Staging environment variables
 [env.staging.vars]
@@ -87,7 +87,7 @@ id = "f10d38b010894c3a8e75c77d2b0ae6a9"
 
 [[env.production.kv_namespaces]]
 binding = "STATIC_CONTENT"
-id = "f10d38b010894c3a8e75c77d2b0ae6a9"
+id = "f810882156314ae6962a4523d719327c"
 
 # Production environment variables
 [env.production.vars]
@@ -134,7 +134,7 @@ id = "b9b4a8aa1da64f3696c4778e03642cb8"
 
 [[env.local.kv_namespaces]]
 binding = "STATIC_CONTENT"
-id = "b9b4a8aa1da64f3696c4778e03642cb8"
+id = "bd25319670d844718fbae8ac0656e132"
 
 # Cloudflare Access JWT secret (disabled for local development)
 [env.local.secrets]
@@ -158,10 +158,6 @@ VITE_FIREBASE_MEASUREMENT_ID = "G-BCDHQJ67Z0"
 # Cloudflare Access configuration (disabled for local development)
 VITE_CLOUDFLARE_ACCESS_AUD = ""
 VITE_CLOUDFLARE_ACCESS_TEAM_DOMAIN = ""
-
-[build]
-command = "npm run build"
-cwd = "."
 
 [site]
 bucket = "./dist" 
