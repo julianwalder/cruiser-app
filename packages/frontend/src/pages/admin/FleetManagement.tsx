@@ -1,7 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Eye, Edit, Trash2, Upload, Plane } from 'lucide-react';
 
-const FleetManagement: React.FC = () => {
+interface FleetManagementProps {
+  userRole?: 'admin' | 'user' | 'super_admin' | 'base_manager';
+}
+
+const FleetManagement: React.FC<FleetManagementProps> = ({ userRole = 'user' }) => {
+  // Determine if user has admin privileges for fleet management
+  const isAdmin = userRole === 'admin' || userRole === 'super_admin' || userRole === 'base_manager';
+  
   const [fleet, setFleet] = useState<any[]>([]);
   const [bases, setBases] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -29,7 +36,8 @@ const FleetManagement: React.FC = () => {
     totalFlightHours: 0
   });
 
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+  // Use relative URLs for API requests - the worker will proxy them
+  const API_URL = '';
 
   // Fetch aircraft and bases data from API
   useEffect(() => {
@@ -280,9 +288,12 @@ const FleetManagement: React.FC = () => {
       {/* Header Section - Fixed at top */}
       <div className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-20">
         <div className="flex items-center justify-between px-6 py-4">
-          <h2 className="text-2xl font-bold text-gray-900">Fleet Management</h2>
-          <button
-            onClick={() => {
+          <h2 className="text-2xl font-bold text-gray-900">
+            {isAdmin ? 'Fleet Management' : 'Available Aircraft'}
+          </h2>
+          {isAdmin && (
+            <button
+              onClick={() => {
                           setAircraftFormData({
               callSign: '',
               type: '',
@@ -305,6 +316,7 @@ const FleetManagement: React.FC = () => {
           >
             Add Aircraft
           </button>
+          )}
         </div>
       </div>
 
@@ -340,7 +352,7 @@ const FleetManagement: React.FC = () => {
         {!loading && !error && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {fleet.map((aircraft) => (
-          <div key={aircraft.id} className="bg-white rounded-lg shadow-md overflow-hidden">
+          <div key={aircraft.id} className="bg-white rounded-lg shadow-md overflow-hidden flex flex-col min-h-[400px]">
             {/* Image Section - 16:9 Aspect Ratio */}
             <div className="relative w-full" style={{ aspectRatio: '16/9' }}>
               {aircraft.imageUrl ? (
@@ -363,79 +375,85 @@ const FleetManagement: React.FC = () => {
             </div>
             
             {/* Content Section */}
-            <div className="p-4">
-              {/* Header */}
-              <div className="mb-3">
-                <div className="mb-1">
-                  <h3 className="font-bold text-gray-900 text-lg">{aircraft.callSign}</h3>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-500 font-medium">{aircraft.model}</span>
-                    <span className="text-sm text-gray-600">{aircraft.manufacturer}</span>
+            <div className="p-4 flex flex-col flex-1">
+              <div className="flex-1">
+                {/* Header */}
+                <div className="mb-3">
+                  <div className="mb-1">
+                    <h3 className="font-bold text-gray-900 text-lg">{aircraft.callSign}</h3>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-500 font-medium">{aircraft.model}</span>
+                      <span className="text-sm text-gray-600">{aircraft.manufacturer}</span>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Key Specifications */}
+                <div className="grid grid-cols-4 gap-2 mb-4">
+                  <div className="bg-gray-50 rounded-lg p-2">
+                    <div className="text-xs text-gray-500 uppercase tracking-wide">Seats</div>
+                    <div className="text-sm font-semibold text-gray-900">{aircraft.seats}</div>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-2">
+                    <div className="text-xs text-gray-500 uppercase tracking-wide">Year</div>
+                    <div className="text-sm font-semibold text-gray-900">{aircraft.yearManufactured}</div>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-2">
+                    <div className="text-xs text-gray-500 uppercase tracking-wide">Speed</div>
+                    <div className="text-sm font-semibold text-gray-900">{aircraft.cruiseSpeed} kts</div>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-2">
+                    <div className="text-xs text-gray-500 uppercase tracking-wide">Range</div>
+                    <div className="text-sm font-semibold text-gray-900">{aircraft.maxRange} nm</div>
+                  </div>
+                </div>
+                
+                {/* Additional Info */}
+                <div className="grid grid-cols-4 gap-2 mb-4">
+                  <div className="bg-gray-50 rounded-lg p-2">
+                    <div className="text-xs text-gray-500 uppercase tracking-wide">Type</div>
+                    <div className="text-sm font-semibold text-gray-900">{aircraft.type}</div>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-2">
+                    <div className="text-xs text-gray-500 uppercase tracking-wide">Base</div>
+                    <div className="text-sm font-semibold text-gray-900">{getIcaoCodeById(aircraft.baseId)}</div>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-2">
+                    <div className="text-xs text-gray-500 uppercase tracking-wide">Hours</div>
+                    <div className="text-sm font-semibold text-gray-900">{aircraft.totalFlightHours?.toLocaleString() || '0'}</div>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-2">
+                    <div className="text-xs text-gray-500 uppercase tracking-wide">Fuel</div>
+                    <div className="text-sm font-semibold text-gray-900">{aircraft.fuelCapacity} L</div>
                   </div>
                 </div>
               </div>
               
-              {/* Key Specifications */}
-              <div className="grid grid-cols-4 gap-2 mb-4">
-                <div className="bg-gray-50 rounded-lg p-2">
-                  <div className="text-xs text-gray-500 uppercase tracking-wide">Seats</div>
-                  <div className="text-sm font-semibold text-gray-900">{aircraft.seats}</div>
-                </div>
-                <div className="bg-gray-50 rounded-lg p-2">
-                  <div className="text-xs text-gray-500 uppercase tracking-wide">Year</div>
-                  <div className="text-sm font-semibold text-gray-900">{aircraft.yearManufactured}</div>
-                </div>
-                <div className="bg-gray-50 rounded-lg p-2">
-                  <div className="text-xs text-gray-500 uppercase tracking-wide">Speed</div>
-                  <div className="text-sm font-semibold text-gray-900">{aircraft.cruiseSpeed} kts</div>
-                </div>
-                <div className="bg-gray-50 rounded-lg p-2">
-                  <div className="text-xs text-gray-500 uppercase tracking-wide">Range</div>
-                  <div className="text-sm font-semibold text-gray-900">{aircraft.maxRange} nm</div>
-                </div>
-              </div>
-              
-              {/* Additional Info */}
-              <div className="grid grid-cols-4 gap-2 mb-4">
-                <div className="bg-gray-50 rounded-lg p-2">
-                  <div className="text-xs text-gray-500 uppercase tracking-wide">Type</div>
-                  <div className="text-sm font-semibold text-gray-900">{aircraft.type}</div>
-                </div>
-                <div className="bg-gray-50 rounded-lg p-2">
-                  <div className="text-xs text-gray-500 uppercase tracking-wide">Base</div>
-                  <div className="text-sm font-semibold text-gray-900">{getIcaoCodeById(aircraft.baseId)}</div>
-                </div>
-                <div className="bg-gray-50 rounded-lg p-2">
-                  <div className="text-xs text-gray-500 uppercase tracking-wide">Hours</div>
-                  <div className="text-sm font-semibold text-gray-900">{aircraft.totalFlightHours?.toLocaleString() || '0'}</div>
-                </div>
-                <div className="bg-gray-50 rounded-lg p-2">
-                  <div className="text-xs text-gray-500 uppercase tracking-wide">Fuel</div>
-                  <div className="text-sm font-semibold text-gray-900">{aircraft.fuelCapacity} L</div>
-                </div>
-              </div>
-              
               {/* Action Links */}
-              <div className="border-t border-gray-200 pt-3">
+              <div className="border-t border-gray-200 pt-3 mt-4">
                 <div className="flex space-x-3 text-sm">
                   <button
                     onClick={() => handleViewAircraft(aircraft)}
                     className="text-blue-600 hover:text-blue-800 font-medium"
                   >
-                    View
+                    View Details
                   </button>
-                  <button
-                    onClick={() => handleEditAircraft(aircraft)}
-                    className="text-gray-600 hover:text-gray-800 font-medium"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => handleDeleteAircraft(aircraft)}
-                    className="text-red-600 hover:text-red-800 font-medium"
-                  >
-                    Delete
-                  </button>
+                  {isAdmin && (
+                    <>
+                      <button
+                        onClick={() => handleEditAircraft(aircraft)}
+                        className="text-gray-600 hover:text-gray-800 font-medium"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDeleteAircraft(aircraft)}
+                        className="text-red-600 hover:text-red-800 font-medium"
+                      >
+                        Delete
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             </div>

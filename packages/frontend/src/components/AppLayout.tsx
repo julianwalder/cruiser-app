@@ -91,6 +91,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
         { id: 'invoices', label: 'Invoices', icon: Icons.Invoices },
         { id: 'payments', label: 'Payments', icon: Icons.Payments },
         { id: 'bases', label: 'Bases', icon: Icons.Bases },
+        { id: 'fleet', label: 'Fleet', icon: Icons.Fleet },
         { id: 'profile', label: 'Profile', icon: Icons.Profile },
         { id: 'settings', label: 'Settings', icon: Icons.Settings },
       ];

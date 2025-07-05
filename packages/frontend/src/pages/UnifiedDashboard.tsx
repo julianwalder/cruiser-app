@@ -361,6 +361,7 @@ export const UnifiedDashboard: React.FC<UnifiedDashboardProps> = ({
           'invoices',
           'payments',
           'bases',
+          'fleet',
           'profile',
           'settings'
         ];
@@ -390,7 +391,7 @@ export const UnifiedDashboard: React.FC<UnifiedDashboardProps> = ({
       case 'bases':
         return <BaseManagement userRole={userRole} />;
       case 'fleet':
-        return <FleetManagement />;
+        return <FleetManagement userRole={userRole} />;
       case 'roles':
         return <RoleManagement />;
       case 'services':

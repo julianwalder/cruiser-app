@@ -24,7 +24,8 @@
     "setup:cloudflare-vars": "./scripts/setup-cloudflare-vars.sh",
     "dev:api:watch": "nodemon --watch scripts/dev-api.js scripts/dev-api.js",
     "dev:all": "concurrently \"npm run api:dev\" \"npm run dev:simple\"",
-    "dev:complete": "./scripts/dev-all.sh"
+    "dev:complete": "./scripts/dev-all.sh",
+    "dev:full": "./scripts/dev-all.sh"
   },
   "dependencies": {
     "@cloudflare/kv-asset-handler": "^0.3.0",

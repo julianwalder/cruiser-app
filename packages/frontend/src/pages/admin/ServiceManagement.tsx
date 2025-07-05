@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Eye, Edit, Trash2, Plane } from 'lucide-react';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8787';
+// Use relative URLs for API requests - the worker will proxy them
+const API_URL = '';
 
 interface ServiceManagementProps {
   userRole?: 'admin' | 'user' | 'super_admin' | 'base_manager';

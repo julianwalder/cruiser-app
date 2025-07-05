@@ -17,7 +17,7 @@ const storage = multer.memoryStorage();
 const upload = multer({ 
   storage: storage,
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB limit
+    fileSize: 25 * 1024 * 1024, // 25MB limit
   },
   fileFilter: (req, file, cb) => {
     // Accept only image files
@@ -31,8 +31,8 @@ const upload = multer({
 
 // Middleware
 app.use(cors());
-app.use(express.json({ limit: '10mb' })); // Increased limit for base64 image data
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.json({ limit: '50mb' })); // Increased limit for base64 image data
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // Mock data for development
 const mockData = {
@@ -420,6 +420,84 @@ app.get('/api/admin/aircraft', (req, res) => {
   res.json(mockData.aircraft);
 });
 
+// Create aircraft
+app.post('/api/admin/aircraft', (req, res) => {
+  const newAircraft = {
+    id: mockData.aircraft.length + 1,
+    ...req.body,
+    isActive: req.body.isActive !== undefined ? req.body.isActive : true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+  mockData.aircraft.push(newAircraft);
+  res.status(201).json(newAircraft);
+});
+
+// Update aircraft
+app.put('/api/admin/aircraft/:id', (req, res) => {
+  const id = parseInt(req.params.id);
+  const aircraftIndex = mockData.aircraft.findIndex(a => a.id === id);
+  
+  if (aircraftIndex === -1) {
+    return res.status(404).json({ error: 'Aircraft not found' });
+  }
+  
+  mockData.aircraft[aircraftIndex] = { 
+    ...mockData.aircraft[aircraftIndex], 
+    ...req.body,
+    updatedAt: new Date().toISOString()
+  };
+  res.json(mockData.aircraft[aircraftIndex]);
+});
+
+// Delete aircraft
+app.delete('/api/admin/aircraft/:id', (req, res) => {
+  const id = parseInt(req.params.id);
+  const aircraftIndex = mockData.aircraft.findIndex(a => a.id === id);
+  
+  if (aircraftIndex === -1) {
+    return res.status(404).json({ error: 'Aircraft not found' });
+  }
+  
+  mockData.aircraft.splice(aircraftIndex, 1);
+  res.status(204).send();
+});
+
+// Upload aircraft image
+app.post('/api/admin/aircraft/upload-image', upload.single('image'), (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No image file provided' });
+    }
+
+    // For local development, we'll create a data URL from the uploaded file
+    const timestamp = Date.now();
+    const randomId = Math.random().toString(36).substring(2, 15);
+    const fileExtension = req.file.originalname.split('.').pop() || 'jpg';
+    
+    // Convert the file buffer to a data URL
+    const base64Data = req.file.buffer.toString('base64');
+    const mimeType = req.file.mimetype || 'image/jpeg';
+    const dataUrl = `data:${mimeType};base64,${base64Data}`;
+    
+    // Also provide a fallback URL for testing
+    const fallbackUrl = `https://picsum.photos/400/300?random=${randomId}`;
+    
+    res.json({ 
+      url: dataUrl, // Use data URL for local development
+      fallbackUrl: fallbackUrl, // Fallback for testing
+      message: 'Aircraft image uploaded successfully (local development)',
+      filename: req.file.originalname,
+      size: req.file.size,
+      mimetype: req.file.mimetype,
+      note: 'Using data URL for local development. In production, this would be a cloud storage URL.'
+    });
+  } catch (error) {
+    console.error('Upload error:', error);
+    res.status(500).json({ error: 'Failed to upload image' });
+  }
+});
+
 // Users
 app.get('/api/users', (req, res) => {
   res.json(mockData.users);
@@ -543,6 +621,31 @@ app.get('*', (req, res) => {
 // Improved error handler
 app.use((err, req, res, next) => {
   console.error('API Error:', err);
+  
+  // Handle specific error types
+  if (err.type === 'entity.too.large') {
+    return res.status(413).json({ 
+      error: 'Payload too large', 
+      message: 'The request payload exceeds the maximum allowed size',
+      limit: '50MB for JSON, 25MB for files'
+    });
+  }
+  
+  if (err.code === 'LIMIT_FILE_SIZE') {
+    return res.status(413).json({ 
+      error: 'File too large', 
+      message: 'The uploaded file exceeds the maximum allowed size',
+      limit: '25MB'
+    });
+  }
+  
+  if (err.message === 'Only image files are allowed') {
+    return res.status(400).json({ 
+      error: 'Invalid file type', 
+      message: 'Only image files are allowed'
+    });
+  }
+  
   res.status(500).json({ error: 'Internal server error', details: err.message });
 });
 
