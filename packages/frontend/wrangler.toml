@@ -1,10 +1,29 @@
 main = "src/worker.ts"
-name = "cruiser-aviation-frontend"
+name = "cruiser-aviation-frontend-prod"
 compatibility_date = "2024-01-01"
+
+[observability.logs]
+enabled = false
+
+# Global settings for all environments
+[triggers]
+crons = []
+
+# Ensure consistent build settings
+[build]
+command = "npm run build"
+cwd = "."
 
 [env.staging]
 name = "cruiser-aviation-frontend-staging"
 main = "src/worker.ts"
+
+[env.staging.observability.logs]
+enabled = false
+
+# Staging-specific settings
+[env.staging.triggers]
+crons = []
 
 [[env.staging.d1_databases]]
 binding = "DB"
@@ -46,6 +65,13 @@ VITE_CLOUDFLARE_ACCESS_TEAM_DOMAIN = "cruiseraviation.com"
 name = "cruiser-aviation-frontend"
 main = "src/worker.ts"
 
+[env.production.observability.logs]
+enabled = false
+
+# Production-specific settings
+[env.production.triggers]
+crons = []
+
 [[env.production.d1_databases]]
 binding = "DB"
 database_name = "cruiser-db-prod"
@@ -85,6 +111,13 @@ VITE_CLOUDFLARE_ACCESS_TEAM_DOMAIN = "cruiseraviation.com"
 [env.local]
 name = "cruiser-aviation-frontend-local"
 main = "src/worker.ts"
+
+[env.local.observability.logs]
+enabled = false
+
+# Local-specific settings
+[env.local.triggers]
+crons = []
 
 [[env.local.d1_databases]]
 binding = "DB"
