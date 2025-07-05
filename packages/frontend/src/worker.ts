@@ -48,7 +48,7 @@ export default {
       switch (environment) {
         case 'staging':
           return {
-            STATIC_CONTENT: env.STATIC_CONTENT_STAGING,
+            STATIC_CONTENT: env.STATIC_CONTENT,
             DB: env.DB_STAGING,
             STORAGE: env.STORAGE_STAGING,
             CACHE: env.CACHE_STAGING,
