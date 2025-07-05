@@ -2,7 +2,7 @@ name: Deploy to Production
 
 on:
   push:
-    branches: [master]
+    branches: [master, main]
   workflow_dispatch:
 
 jobs:
@@ -38,4 +38,5 @@ jobs:
       - name: Notify deployment
         run: |
           echo "✅ Successfully deployed to production environment!"
-          echo "🌍 Production URL: https://cruiser-aviation-frontend.your-subdomain.workers.dev" 
+          echo "🌍 Production URL: https://cruiser-aviation-frontend.julian-pad.workers.dev"
+          echo "📊 Deployment completed at $(date)" 
