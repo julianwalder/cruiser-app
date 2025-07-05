@@ -22,7 +22,15 @@
     "test:frontend": "cd packages/frontend && npm run test",
     "populate:staging": "node scripts/populate-environments.js staging",
     "populate:production": "node scripts/populate-environments.js production",
-    "populate:all": "node scripts/populate-environments.js staging production"
+    "populate:all": "node scripts/populate-environments.js staging production",
+    "worker:dev": "wrangler dev --env local",
+    "worker:dev:staging": "wrangler dev --env staging",
+    "worker:dev:production": "wrangler dev --env production",
+    "worker:deploy:staging": "wrangler deploy --env staging",
+    "worker:deploy:production": "wrangler deploy --env production",
+    "worker:build": "wrangler build",
+    "worker:tail:staging": "wrangler tail --env staging",
+    "worker:tail:production": "wrangler tail --env production"
   },
   "devDependencies": {
     "concurrently": "^8.2.2",

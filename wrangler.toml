@@ -13,35 +13,17 @@ VITE_APP_NAME = "Cruiser Aviation"
 VITE_APP_VERSION = "1.0.0"
 VITE_ENVIRONMENT = "production"
 VITE_DEBUG = "false"
-VITE_FIREBASE_API_KEY = ""
-VITE_FIREBASE_AUTH_DOMAIN = ""
-VITE_FIREBASE_PROJECT_ID = ""
-VITE_FIREBASE_STORAGE_BUCKET = ""
-VITE_FIREBASE_MESSAGING_SENDER_ID = ""
-VITE_FIREBASE_APP_ID = ""
-VITE_FIREBASE_MEASUREMENT_ID = ""
-VITE_CLOUDFLARE_ACCESS_AUD = ""
-VITE_CLOUDFLARE_ACCESS_TEAM_DOMAIN = ""
+VITE_FIREBASE_API_KEY = "AIzaSyChijXhZBr7ycWKEQSK1bCdLSoQioKEurk"
+VITE_FIREBASE_AUTH_DOMAIN = "cruiserapp-b8429.firebaseapp.com"
+VITE_FIREBASE_PROJECT_ID = "cruiserapp-b8429"
+VITE_FIREBASE_STORAGE_BUCKET = "cruiserapp-b8429.firebasestorage.app"
+VITE_FIREBASE_MESSAGING_SENDER_ID = "443919130210"
+VITE_FIREBASE_APP_ID = "1:443919130210:web:b8a009ef9ca1ca4f433b3b"
+VITE_FIREBASE_MEASUREMENT_ID = "G-BCDHQJ67Z0"
+VITE_CLOUDFLARE_ACCESS_AUD = "https://cruiseraviation.com"
+VITE_CLOUDFLARE_ACCESS_TEAM_DOMAIN = "cruiseraviation.com"
 
-# Additional D1 databases for population scripts
-[[d1_databases]]
-binding = "DB_STAGING"
-database_name = "cruiser-db-staging"
-database_id = "73665fa6-b020-45ba-899c-e495344a4ee3"
-
-[[r2_buckets]]
-binding = "STORAGE"
-bucket_name = "cruiser-storage-prod"
-
-[[kv_namespaces]]
-binding = "CACHE"
-id = "f10d38b010894c3a8e75c77d2b0ae6a9"
-
-[[kv_namespaces]]
-binding = "STATIC_CONTENT"
-id = "f810882156314ae6962a4523d719327c"
-
-# Import the environment configurations from the frontend package
+# Production environment (default)
 [env.production]
 name = "cruiser-aviation-frontend"
 main = "packages/frontend/src/worker.ts"
@@ -69,15 +51,15 @@ VITE_APP_NAME = "Cruiser Aviation"
 VITE_APP_VERSION = "1.0.0"
 VITE_ENVIRONMENT = "production"
 VITE_DEBUG = "false"
-VITE_FIREBASE_API_KEY = ""
-VITE_FIREBASE_AUTH_DOMAIN = ""
-VITE_FIREBASE_PROJECT_ID = ""
-VITE_FIREBASE_STORAGE_BUCKET = ""
-VITE_FIREBASE_MESSAGING_SENDER_ID = ""
-VITE_FIREBASE_APP_ID = ""
-VITE_FIREBASE_MEASUREMENT_ID = ""
-VITE_CLOUDFLARE_ACCESS_AUD = ""
-VITE_CLOUDFLARE_ACCESS_TEAM_DOMAIN = ""
+VITE_FIREBASE_API_KEY = "AIzaSyChijXhZBr7ycWKEQSK1bCdLSoQioKEurk"
+VITE_FIREBASE_AUTH_DOMAIN = "cruiserapp-b8429.firebaseapp.com"
+VITE_FIREBASE_PROJECT_ID = "cruiserapp-b8429"
+VITE_FIREBASE_STORAGE_BUCKET = "cruiserapp-b8429.firebasestorage.app"
+VITE_FIREBASE_MESSAGING_SENDER_ID = "443919130210"
+VITE_FIREBASE_APP_ID = "1:443919130210:web:b8a009ef9ca1ca4f433b3b"
+VITE_FIREBASE_MEASUREMENT_ID = "G-BCDHQJ67Z0"
+VITE_CLOUDFLARE_ACCESS_AUD = "https://cruiseraviation.com"
+VITE_CLOUDFLARE_ACCESS_TEAM_DOMAIN = "cruiseraviation.com"
 
 [env.production.observability.logs]
 enabled = false
@@ -85,42 +67,43 @@ enabled = false
 [env.production.triggers]
 crons = []
 
+# Staging environment
 [env.staging]
 name = "cruiser-aviation-frontend-staging"
 main = "packages/frontend/src/worker.ts"
 
 [[env.staging.d1_databases]]
-binding = "DB"
+binding = "DB_STAGING"
 database_name = "cruiser-db-staging"
 database_id = "73665fa6-b020-45ba-899c-e495344a4ee3"
 
 [[env.staging.r2_buckets]]
-binding = "STORAGE"
+binding = "STORAGE_STAGING"
 bucket_name = "cruiser-storage-staging"
 
 [[env.staging.kv_namespaces]]
-binding = "CACHE"
+binding = "CACHE_STAGINNG"
 id = "b9b4a8aa1da64f3696c4778e03642cb8"
 
 [[env.staging.kv_namespaces]]
-binding = "STATIC_CONTENT"
+binding = "STATIC_CONTENT_STAGING"
 id = "169a44fd52ec4d9d885a44ecba941dc4"
 
 [env.staging.vars]
 VITE_API_URL = "https://staging-api.cruiseraviation.com"
-VITE_APP_NAME = "Cruiser Aviation"
+VITE_APP_NAME = "Cruiser Aviation (Staging)"
 VITE_APP_VERSION = "1.0.0"
 VITE_ENVIRONMENT = "staging"
 VITE_DEBUG = "true"
-VITE_FIREBASE_API_KEY = ""
-VITE_FIREBASE_AUTH_DOMAIN = ""
-VITE_FIREBASE_PROJECT_ID = ""
-VITE_FIREBASE_STORAGE_BUCKET = ""
-VITE_FIREBASE_MESSAGING_SENDER_ID = ""
-VITE_FIREBASE_APP_ID = ""
-VITE_FIREBASE_MEASUREMENT_ID = ""
-VITE_CLOUDFLARE_ACCESS_AUD = ""
-VITE_CLOUDFLARE_ACCESS_TEAM_DOMAIN = ""
+VITE_FIREBASE_API_KEY = "AIzaSyChijXhZBr7ycWKEQSK1bCdLSoQioKEurk"
+VITE_FIREBASE_AUTH_DOMAIN = "cruiserapp-b8429.firebaseapp.com"
+VITE_FIREBASE_PROJECT_ID = "cruiserapp-b8429"
+VITE_FIREBASE_STORAGE_BUCKET = "cruiserapp-b8429.firebasestorage.app"
+VITE_FIREBASE_MESSAGING_SENDER_ID = "443919130210"
+VITE_FIREBASE_APP_ID = "1:443919130210:web:b8a009ef9ca1ca4f433b3b"
+VITE_FIREBASE_MEASUREMENT_ID = "G-BCDHQJ67Z0"
+VITE_CLOUDFLARE_ACCESS_AUD = "https://staging.cruiseraviation.com"
+VITE_CLOUDFLARE_ACCESS_TEAM_DOMAIN = "cruiseraviation.com"
 
 [env.staging.observability.logs]
 enabled = false
@@ -128,6 +111,7 @@ enabled = false
 [env.staging.triggers]
 crons = []
 
+# Local development environment
 [env.local]
 name = "cruiser-aviation-frontend-local"
 main = "packages/frontend/src/worker.ts"
@@ -147,21 +131,21 @@ id = "b9b4a8aa1da64f3696c4778e03642cb8"
 
 [[env.local.kv_namespaces]]
 binding = "STATIC_CONTENT"
-id = "169a44fd52ec4d9d885a44ecba941dc4"
+id = "cde2db60fa8947d79a44b0869a5f8995"
 
 [env.local.vars]
 VITE_API_URL = "http://localhost:8787"
-VITE_APP_NAME = "Cruiser Aviation"
+VITE_APP_NAME = "Cruiser Aviation (Local)"
 VITE_APP_VERSION = "1.0.0"
 VITE_ENVIRONMENT = "local"
 VITE_DEBUG = "true"
-VITE_FIREBASE_API_KEY = ""
-VITE_FIREBASE_AUTH_DOMAIN = ""
-VITE_FIREBASE_PROJECT_ID = ""
-VITE_FIREBASE_STORAGE_BUCKET = ""
-VITE_FIREBASE_MESSAGING_SENDER_ID = ""
-VITE_FIREBASE_APP_ID = ""
-VITE_FIREBASE_MEASUREMENT_ID = ""
+VITE_FIREBASE_API_KEY = "AIzaSyChijXhZBr7ycWKEQSK1bCdLSoQioKEurk"
+VITE_FIREBASE_AUTH_DOMAIN = "cruiserapp-b8429.firebaseapp.com"
+VITE_FIREBASE_PROJECT_ID = "cruiserapp-b8429"
+VITE_FIREBASE_STORAGE_BUCKET = "cruiserapp-b8429.firebasestorage.app"
+VITE_FIREBASE_MESSAGING_SENDER_ID = "443919130210"
+VITE_FIREBASE_APP_ID = "1:443919130210:web:b8a009ef9ca1ca4f433b3b"
+VITE_FIREBASE_MEASUREMENT_ID = "G-BCDHQJ67Z0"
 VITE_CLOUDFLARE_ACCESS_AUD = ""
 VITE_CLOUDFLARE_ACCESS_TEAM_DOMAIN = ""
 
