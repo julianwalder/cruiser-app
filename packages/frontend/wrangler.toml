@@ -61,6 +61,10 @@ VITE_DEBUG = "true"
 VITE_CLOUDFLARE_ACCESS_AUD = "https://staging.cruiseraviation.com"
 VITE_CLOUDFLARE_ACCESS_TEAM_DOMAIN = "cruiseraviation.com"
 
+# JWT Secret for staging
+[env.staging.secrets]
+JWT_SECRET = "staging-jwt-secret-2024"
+
 [env.production]
 name = "cruiser-aviation-frontend"
 main = "src/worker.ts"
