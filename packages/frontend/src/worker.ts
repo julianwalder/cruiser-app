@@ -1,7 +1,11 @@
 import { getAssetFromKV, mapRequestToAsset } from '@cloudflare/kv-asset-handler';
+import { SimpleAPI } from './api/simple-api';
 
 interface Env {
   __STATIC_CONTENT: KVNamespace;
+  DB: D1Database;
+  STORAGE: R2Bucket;
+  CACHE: KVNamespace;
   VITE_API_URL: string;
   VITE_APP_NAME: string;
   VITE_APP_VERSION: string;
@@ -14,14 +18,25 @@ interface Env {
   VITE_FIREBASE_MEASUREMENT_ID: string;
   VITE_ENVIRONMENT: string;
   VITE_DEBUG: string;
+  VITE_CLOUDFLARE_ACCESS_AUD: string;
+  VITE_CLOUDFLARE_ACCESS_TEAM_DOMAIN: string;
+  JWT_SECRET: string;
 }
 
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
     
-    // Handle API requests (proxy to backend)
+    // Handle API requests with simple API
     if (url.pathname.startsWith('/api/')) {
+      const api = new SimpleAPI(env);
+      const response = await api.handleRequest(request, url);
+      
+      if (response) {
+        return response;
+      }
+      
+      // Fallback to backend if not handled by edge API
       const apiUrl = env.VITE_API_URL || 'https://api.cruiseraviation.com';
       const apiRequest = new Request(`${apiUrl}${url.pathname}${url.search}`, {
         method: request.method,

@@ -73,7 +73,7 @@ const BaseManagement: React.FC<BaseManagementProps> = ({ userRole = 'user' }) =>
     setImageUploading(true);
     setImageUploadError('');
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append('image', file);
     try {
       const res = await fetch('/api/admin/bases/upload-image', {
         method: 'POST',

@@ -116,7 +116,7 @@ const UserManagement: React.FC = () => {
   const handleImageUpload = async (file: File) => {
     try {
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append('image', file);
       
       const response = await fetch('/api/admin/users/upload-image', {
         method: 'POST',
@@ -405,11 +405,16 @@ const UserManagement: React.FC = () => {
                         <div className="flex items-center">
                           <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center flex-shrink-0">
                             {user.imageUrl ? (
-                              <img 
-                                src={`${API_URL}${user.imageUrl}`} 
-                                alt={`${user.firstName} ${user.lastName}`} 
-                                className="w-10 h-10 rounded-full object-cover"
-                              />
+                              <>
+                                <img 
+                                  src={user.imageUrl} 
+                                  alt={`${user.firstName} ${user.lastName}`} 
+                                  className="w-10 h-10 rounded-full object-cover"
+                                />
+                                <span className="text-gray-500 text-sm hidden">
+                                  {user.firstName?.[0]}{user.lastName?.[0]}
+                                </span>
+                              </>
                             ) : (
                               <span className="text-gray-500 text-sm">
                                 {user.firstName?.[0]}{user.lastName?.[0]}
@@ -599,7 +604,7 @@ const UserManagement: React.FC = () => {
                       {userFormData.imageUrl && (
                         <div className="w-32 h-32 bg-gray-100 rounded-md overflow-hidden">
                           <img 
-                            src={`${API_URL}${userFormData.imageUrl}`} 
+                            src={userFormData.imageUrl} 
                             alt="Profile preview" 
                             className="w-full h-full object-cover"
                           />
@@ -721,7 +726,7 @@ const UserManagement: React.FC = () => {
                   <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center">
                     {selectedUser.imageUrl ? (
                       <img 
-                        src={`${API_URL}${selectedUser.imageUrl}`} 
+                        src={selectedUser.imageUrl} 
                         alt={`${selectedUser.firstName} ${selectedUser.lastName}`} 
                         className="w-16 h-16 rounded-full object-cover"
                       />
@@ -798,7 +803,7 @@ const UserManagement: React.FC = () => {
                     <h5 className="font-medium text-gray-900 mb-3">Profile Image</h5>
                     <div className="w-full max-w-md bg-gray-100 rounded-lg overflow-hidden">
                       <img 
-                        src={`${API_URL}${selectedUser.imageUrl}`} 
+                        src={selectedUser.imageUrl} 
                         alt={`${selectedUser.firstName} ${selectedUser.lastName}`} 
                         className="w-full h-64 object-cover"
                       />
@@ -931,7 +936,7 @@ const UserManagement: React.FC = () => {
                       {userFormData.imageUrl && (
                         <div className="w-32 h-32 bg-gray-100 rounded-md overflow-hidden">
                           <img 
-                            src={`${API_URL}${userFormData.imageUrl}`} 
+                            src={userFormData.imageUrl} 
                             alt="Profile preview" 
                             className="w-full h-full object-cover"
                           />
