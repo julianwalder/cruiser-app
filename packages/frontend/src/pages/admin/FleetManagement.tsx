@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Eye, Edit, Trash2, Upload, Plane } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 interface FleetManagementProps {
   userRole?: 'admin' | 'user' | 'super_admin' | 'base_manager';
@@ -13,8 +14,8 @@ const FleetManagement: React.FC<FleetManagementProps> = ({ userRole = 'user' }) 
   const [bases, setBases] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showAddAircraftModal, setShowAddAircraftModal] = useState(false);
-  const [showEditAircraftModal, setShowEditAircraftModal] = useState(false);
+  const [showAircraftModal, setShowAircraftModal] = useState(false);
+  const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
   const [showViewAircraftModal, setShowViewAircraftModal] = useState(false);
   const [selectedAircraft, setSelectedAircraft] = useState<any>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -98,22 +99,22 @@ const FleetManagement: React.FC<FleetManagementProps> = ({ userRole = 'user' }) 
     try {
       // Validate file type
       if (!file.type.startsWith('image/')) {
-        alert('Please select a valid image file.');
+        toast.error('Please select a valid image file.');
         return;
       }
 
       // Validate file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
-        alert('Image file size must be less than 5MB.');
+        toast.error('Image file size must be less than 5MB.');
         return;
       }
 
       const formData = new FormData();
-      formData.append('file', file); // Changed from 'image' to 'file' to match backend
+      formData.append('image', file);
       
-      console.log('Uploading image:', file.name, 'Size:', file.size);
+      console.log('Uploading aircraft image:', file.name, 'Size:', file.size);
       
-      const response = await fetch('/api/admin/aircraft/upload-image', {
+      const response = await fetch(`${API_URL}/api/admin/aircraft/upload-image`, {
         method: 'POST',
         body: formData,
       });
@@ -124,16 +125,35 @@ const FleetManagement: React.FC<FleetManagementProps> = ({ userRole = 'user' }) 
         const data = await response.json();
         console.log('Upload success:', data);
         handleAircraftFormChange('imageUrl', (data as any).url);
-        alert('Aircraft image uploaded successfully!');
+        toast.success('Aircraft image uploaded successfully!');
       } else {
         const errorData = await response.text();
         console.error('Upload failed:', errorData);
-        alert(`Failed to upload aircraft image: ${response.status} ${response.statusText}`);
+        toast.error(`Failed to upload aircraft image: ${response.status} ${response.statusText}`);
       }
     } catch (error) {
       console.error('Upload error:', error);
-      alert('Error uploading aircraft image. Please check your connection and try again.');
+      toast.error('Error uploading aircraft image. Please check your connection and try again.');
     }
+  };
+
+  const resetForm = () => {
+    setAircraftFormData({
+      callSign: '',
+      type: '',
+      manufacturer: '',
+      model: '',
+      seats: 4,
+      maxRange: 0,
+      cruiseSpeed: 0,
+      fuelCapacity: 0,
+      yearManufactured: new Date().getFullYear(),
+      description: '',
+      isActive: true,
+      baseId: '',
+      imageUrl: '',
+      totalFlightHours: 0
+    });
   };
 
   const handleCreateAircraft = async () => {
@@ -150,32 +170,54 @@ const FleetManagement: React.FC<FleetManagementProps> = ({ userRole = 'user' }) 
       if (response.ok) {
         const newAircraft = await response.json();
         setFleet(prev => [...prev, newAircraft]);
-        setShowAddAircraftModal(false);
-        setAircraftFormData({
-          callSign: '',
-          type: '',
-          manufacturer: '',
-          model: '',
-          seats: 4,
-          maxRange: 0,
-          cruiseSpeed: 0,
-          fuelCapacity: 0,
-          yearManufactured: new Date().getFullYear(),
-          description: '',
-          isActive: true,
-          baseId: '',
-          imageUrl: '',
-          totalFlightHours: 0
-        });
-        alert('Aircraft created successfully!');
+        setShowAircraftModal(false);
+        resetForm();
+        toast.success('Aircraft created successfully!');
       } else {
         const errorData = await response.text();
         console.error('Failed to create aircraft:', errorData);
-        alert('Error creating aircraft. Please try again.');
+        toast.error('Error creating aircraft. Please try again.');
       }
     } catch (error) {
       console.error('Error creating aircraft:', error);
-      alert('Error creating aircraft. Please try again.');
+      toast.error('Error creating aircraft. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleUpdateAircraft = async () => {
+    if (!selectedAircraft) return;
+    
+    setIsSubmitting(true);
+    try {
+      const response = await fetch(`${API_URL}/api/admin/aircraft/${selectedAircraft.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(aircraftFormData),
+      });
+
+      if (response.ok) {
+        const updatedAircraft = await response.json();
+        setFleet(prev => prev.map(aircraft => 
+          aircraft.id === selectedAircraft.id 
+            ? updatedAircraft
+            : aircraft
+        ));
+        setShowAircraftModal(false);
+        setSelectedAircraft(null);
+        resetForm();
+        toast.success('Aircraft updated successfully!');
+      } else {
+        const errorData = await response.text();
+        console.error('Failed to update aircraft:', errorData);
+        toast.error('Error updating aircraft. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error updating aircraft:', error);
+      toast.error('Error updating aircraft. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -204,59 +246,15 @@ const FleetManagement: React.FC<FleetManagementProps> = ({ userRole = 'user' }) 
       imageUrl: aircraft.imageUrl || '',
       totalFlightHours: aircraft.totalFlightHours || 0
     });
-    setShowEditAircraftModal(true);
+    setModalMode('edit');
+    setShowAircraftModal(true);
   };
 
-  const handleUpdateAircraft = async () => {
-    if (!selectedAircraft) return;
-    
-    setIsSubmitting(true);
-    try {
-      const response = await fetch(`${API_URL}/api/admin/aircraft/${selectedAircraft.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(aircraftFormData),
-      });
-
-      if (response.ok) {
-        const updatedAircraft = await response.json();
-        setFleet(prev => prev.map(aircraft => 
-          aircraft.id === selectedAircraft.id 
-            ? updatedAircraft
-            : aircraft
-        ));
-        setShowEditAircraftModal(false);
-        setSelectedAircraft(null);
-        setAircraftFormData({
-          callSign: '',
-          type: '',
-          manufacturer: '',
-          model: '',
-          seats: 4,
-          maxRange: 0,
-          cruiseSpeed: 0,
-          fuelCapacity: 0,
-          yearManufactured: new Date().getFullYear(),
-          description: '',
-          isActive: true,
-          baseId: '',
-          imageUrl: '',
-          totalFlightHours: 0
-        });
-        alert('Aircraft updated successfully!');
-      } else {
-        const errorData = await response.text();
-        console.error('Failed to update aircraft:', errorData);
-        alert('Error updating aircraft. Please try again.');
-      }
-    } catch (error) {
-      console.error('Error updating aircraft:', error);
-      alert('Error updating aircraft. Please try again.');
-    } finally {
-      setIsSubmitting(false);
-    }
+  const handleAddAircraft = () => {
+    resetForm();
+    setSelectedAircraft(null);
+    setModalMode('add');
+    setShowAircraftModal(true);
   };
 
   const handleDeleteAircraft = async (aircraft: any) => {
@@ -271,15 +269,15 @@ const FleetManagement: React.FC<FleetManagementProps> = ({ userRole = 'user' }) 
 
       if (response.ok) {
         setFleet(prev => prev.filter(a => a.id !== aircraft.id));
-        alert('Aircraft deleted successfully!');
+        toast.success('Aircraft deleted successfully!');
       } else {
         const errorData = await response.text();
         console.error('Failed to delete aircraft:', errorData);
-        alert('Error deleting aircraft. Please try again.');
+        toast.error('Error deleting aircraft. Please try again.');
       }
     } catch (error) {
       console.error('Error deleting aircraft:', error);
-      alert('Error deleting aircraft. Please try again.');
+      toast.error('Error deleting aircraft. Please try again.');
     }
   };
 
@@ -293,29 +291,11 @@ const FleetManagement: React.FC<FleetManagementProps> = ({ userRole = 'user' }) 
           </h2>
           {isAdmin && (
             <button
-              onClick={() => {
-                          setAircraftFormData({
-              callSign: '',
-              type: '',
-              manufacturer: '',
-              model: '',
-              seats: 4,
-              maxRange: 0,
-              cruiseSpeed: 0,
-              fuelCapacity: 0,
-              yearManufactured: new Date().getFullYear(),
-              description: '',
-              isActive: true,
-              baseId: '',
-              imageUrl: '',
-              totalFlightHours: 0
-            });
-            setShowAddAircraftModal(true);
-            }}
-            className="px-4 py-2 bg-black text-white rounded-md text-sm hover:bg-gray-800"
-          >
-            Add Aircraft
-          </button>
+              onClick={handleAddAircraft}
+              className="px-4 py-2 bg-black text-white rounded-md text-sm hover:bg-gray-800"
+            >
+              Add Aircraft
+            </button>
           )}
         </div>
       </div>
@@ -463,26 +443,31 @@ const FleetManagement: React.FC<FleetManagementProps> = ({ userRole = 'user' }) 
         )}
       </div>
 
-      {/* Add Aircraft Modal */}
-      {showAddAircraftModal && (
+      {/* Unified Aircraft Modal */}
+      {showAircraftModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 flex flex-col max-h-[90vh]">
             {/* Fixed Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white rounded-t-lg">
-              <h3 className="text-lg font-medium text-gray-900">Add New Aircraft</h3>
+              <h3 className="text-lg font-medium text-gray-900">
+                {modalMode === 'add' ? 'Add New Aircraft' : 'Edit Aircraft'}
+              </h3>
               <div className="flex space-x-2">
                 <button
-                  onClick={() => setShowAddAircraftModal(false)}
+                  onClick={() => setShowAircraftModal(false)}
                   className="px-4 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50"
                 >
                   Cancel
                 </button>
                 <button
-                  onClick={handleCreateAircraft}
+                  onClick={modalMode === 'add' ? handleCreateAircraft : handleUpdateAircraft}
                   disabled={isSubmitting}
                   className="px-4 py-2 text-sm bg-black text-white rounded-md hover:bg-gray-800 disabled:opacity-50"
                 >
-                  {isSubmitting ? 'Creating...' : 'Create Aircraft'}
+                  {isSubmitting 
+                    ? (modalMode === 'add' ? 'Creating...' : 'Updating...') 
+                    : (modalMode === 'add' ? 'Create Aircraft' : 'Update Aircraft')
+                  }
                 </button>
               </div>
             </div>
@@ -778,213 +763,6 @@ const FleetManagement: React.FC<FleetManagementProps> = ({ userRole = 'user' }) 
                     </div>
                   </div>
                 )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Edit Aircraft Modal */}
-      {showEditAircraftModal && selectedAircraft && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 flex flex-col max-h-[90vh]">
-            {/* Fixed Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white rounded-t-lg">
-              <h3 className="text-lg font-medium text-gray-900">Edit Aircraft</h3>
-              <div className="flex space-x-2">
-                <button
-                  onClick={() => setShowEditAircraftModal(false)}
-                  className="px-4 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleUpdateAircraft}
-                  disabled={isSubmitting}
-                  className="px-4 py-2 text-sm bg-black text-white rounded-md hover:bg-gray-800 disabled:opacity-50"
-                >
-                  {isSubmitting ? 'Updating...' : 'Update Aircraft'}
-                </button>
-              </div>
-            </div>
-
-            {/* Scrollable Content */}
-            <div className="flex-1 overflow-y-auto p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Basic Information */}
-                <div className="space-y-4">
-                  <h4 className="font-medium text-gray-900">Basic Information</h4>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Call Sign</label>
-                    <input
-                      type="text"
-                      value={aircraftFormData.callSign}
-                      onChange={e => handleAircraftFormChange('callSign', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
-                    <input
-                      type="text"
-                      value={aircraftFormData.type}
-                      onChange={e => handleAircraftFormChange('type', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Manufacturer</label>
-                      <input
-                        type="text"
-                        value={aircraftFormData.manufacturer}
-                        onChange={e => handleAircraftFormChange('manufacturer', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Model</label>
-                      <input
-                        type="text"
-                        value={aircraftFormData.model}
-                        onChange={e => handleAircraftFormChange('model', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Base</label>
-                    <select
-                      value={aircraftFormData.baseId || ''}
-                      onChange={e => handleAircraftFormChange('baseId', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="">Select a base</option>
-                      {bases.map(base => (
-                        <option key={base.id} value={base.id}>
-                          {base.name} ({base.icaoCode})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Aircraft Image</label>
-                    <div className="space-y-2">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) handleAircraftImageUpload(file);
-                        }}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                      {aircraftFormData.imageUrl && (
-                        <div className="w-32 h-32 bg-gray-100 rounded-md overflow-hidden">
-                          <img 
-                            src={`${API_URL}${aircraftFormData.imageUrl}`} 
-                            alt="Aircraft preview" 
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                    <textarea
-                      value={aircraftFormData.description}
-                      onChange={e => handleAircraftFormChange('description', e.target.value)}
-                      rows={3}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                </div>
-
-                {/* Specifications */}
-                <div className="space-y-4">
-                  <h4 className="font-medium text-gray-900">Specifications</h4>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Seats</label>
-                      <input
-                        type="number"
-                        value={aircraftFormData.seats}
-                        onChange={e => handleAircraftFormChange('seats', parseInt(e.target.value) || 0)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Year Manufactured</label>
-                      <input
-                        type="number"
-                        value={aircraftFormData.yearManufactured}
-                        onChange={e => handleAircraftFormChange('yearManufactured', parseInt(e.target.value) || new Date().getFullYear())}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Total Flight Hours</label>
-                    <input
-                      type="number"
-                      value={aircraftFormData.totalFlightHours}
-                      onChange={e => handleAircraftFormChange('totalFlightHours', parseInt(e.target.value) || 0)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Max Range (nm)</label>
-                      <input
-                        type="number"
-                        value={aircraftFormData.maxRange}
-                        onChange={e => handleAircraftFormChange('maxRange', parseInt(e.target.value) || 0)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Cruise Speed (kts)</label>
-                      <input
-                        type="number"
-                        value={aircraftFormData.cruiseSpeed}
-                        onChange={e => handleAircraftFormChange('cruiseSpeed', parseInt(e.target.value) || 0)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Fuel Capacity (L)</label>
-                    <input
-                      type="number"
-                      value={aircraftFormData.fuelCapacity}
-                      onChange={e => handleAircraftFormChange('fuelCapacity', parseInt(e.target.value) || 0)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="flex items-center">
-                      <input
-                        type="checkbox"
-                        checked={aircraftFormData.isActive}
-                        onChange={e => handleAircraftFormChange('isActive', e.target.checked)}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      />
-                      <span className="ml-2 text-sm text-gray-700">Active Aircraft</span>
-                    </label>
-                  </div>
-                </div>
               </div>
             </div>
           </div>

@@ -53,13 +53,7 @@ export class SimpleAPI {
       return this.getAuthProfile(request);
     }
 
-    if (path === '/api/auth/verify' && method === 'GET') {
-      return this.verifyAuth(request);
-    }
-
-    if (path === '/api/auth/magic-link' && method === 'POST') {
-      return this.createMagicLink(request);
-    }
+    // Authentication handled by Cloudflare Access only
 
     // Admin endpoints (require authentication)
     if (path === '/api/admin/dashboard' && method === 'GET') {
@@ -166,156 +160,6 @@ export class SimpleAPI {
         }
       });
     }
-  }
-
-  private async verifyAuth(request: Request): Promise<Response> {
-    try {
-      const url = new URL(request.url);
-      const token = url.searchParams.get('token');
-      
-      // Handle magic link token (for development)
-      if (token) {
-        try {
-          const decoded = atob(token);
-          const [email, timestamp] = decoded.split(':');
-          const tokenAge = Date.now() - parseInt(timestamp);
-          
-          // Token expires after 1 hour (3600000 ms)
-          if (tokenAge < 3600000) {
-            // Generate a simple JWT-like token for the session
-            const sessionToken = btoa(JSON.stringify({
-              email,
-              sub: email,
-              iat: Math.floor(Date.now() / 1000),
-              exp: Math.floor((Date.now() + 3600000) / 1000)
-            }));
-            
-            return new Response(JSON.stringify({
-              authenticated: true,
-              message: 'Magic link token is valid',
-              access_token: sessionToken,
-              user: { email, sub: email }
-            }), {
-              headers: { 
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-                'Access-Control-Allow-Headers': 'Content-Type, Authorization'
-              }
-            });
-          } else {
-            return new Response(JSON.stringify({
-              authenticated: false,
-              message: 'Magic link token has expired'
-            }), {
-              headers: { 
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-                'Access-Control-Allow-Headers': 'Content-Type, Authorization'
-              }
-            });
-          }
-        } catch (error) {
-          return new Response(JSON.stringify({
-            authenticated: false,
-            message: 'Invalid magic link token format'
-          }), {
-            headers: { 
-              'Content-Type': 'application/json',
-              'Access-Control-Allow-Origin': '*',
-              'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-              'Access-Control-Allow-Headers': 'Content-Type, Authorization'
-            }
-          });
-        }
-      }
-      
-      // Handle Cloudflare Access token
-      const authenticated = await this.authService.isAuthenticated(request);
-      
-      return new Response(JSON.stringify({
-        authenticated,
-        message: authenticated ? 'Token is valid' : 'Token is invalid or missing'
-      }), {
-        headers: { 
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type, Authorization'
-        }
-      });
-    } catch (error) {
-      return new Response(JSON.stringify({ error: 'Authentication verification failed' }), {
-        status: 500,
-        headers: { 
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type, Authorization'
-        }
-      });
-    }
-  }
-
-  private async createMagicLink(request: Request): Promise<Response> {
-    try {
-      const body = await request.json() as { email: string };
-      
-      if (!body.email) {
-        return new Response(JSON.stringify({ error: 'Email is required' }), {
-          status: 400,
-          headers: { 
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type, Authorization'
-          }
-        });
-      }
-
-      // For development, generate a simple token
-      const token = btoa(`${body.email}:${Date.now()}`);
-      
-      // In production, you would:
-      // 1. Generate a secure token
-      // 2. Store it in the database with expiration
-      // 3. Send an email with the magic link
-      
-      return new Response(JSON.stringify({
-        message: 'Magic link sent successfully',
-        token: token, // Only for development
-        magicLink: `http://localhost:8787/login?token=${token}`
-      }), {
-        headers: { 
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type, Authorization'
-        }
-      });
-    } catch (error) {
-      return new Response(JSON.stringify({ error: 'Failed to create magic link' }), {
-        status: 500,
-        headers: { 
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type, Authorization'
-        }
-      });
-    }
-  }
-
-  // Helper method to check authentication for protected endpoints
-  private async requireAuth(request: Request): Promise<CloudflareUser | null> {
-    const { user, authenticated } = await this.authService.getUserInfo(request);
-    
-    if (!authenticated || !user) {
-      return null;
-    }
-
-    return user;
   }
 
   // Admin dashboard (now requires authentication)
@@ -562,5 +406,16 @@ export class SimpleAPI {
         }
       });
     }
+  }
+
+  // Helper method to check authentication for protected endpoints
+  private async requireAuth(request: Request): Promise<CloudflareUser | null> {
+    const { user, authenticated } = await this.authService.getUserInfo(request);
+    
+    if (!authenticated || !user) {
+      return null;
+    }
+
+    return user;
   }
 } 

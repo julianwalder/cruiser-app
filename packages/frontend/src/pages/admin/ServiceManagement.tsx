@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Eye, Edit, Trash2, Plane } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 // Use relative URLs for API requests - the worker will proxy them
 const API_URL = '';
@@ -14,9 +15,9 @@ const ServiceManagement: React.FC<ServiceManagementProps> = ({ userRole = 'user'
   // Determine if user has admin privileges for service management
   const isAdmin = userRole === 'admin' || userRole === 'super_admin' || userRole === 'base_manager';
   
-  const [showAddServiceModal, setShowAddServiceModal] = useState(false);
+  const [showServiceModal, setShowServiceModal] = useState(false);
   const [showViewServiceModal, setShowViewServiceModal] = useState(false);
-  const [showEditServiceModal, setShowEditServiceModal] = useState(false);
+  const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedService, setSelectedService] = useState<any>(null);
 
@@ -80,6 +81,19 @@ const ServiceManagement: React.FC<ServiceManagementProps> = ({ userRole = 'user'
     }));
   };
 
+  const resetForm = () => {
+    setServiceFormData({
+      name: '',
+      description: '',
+      type: 'flight_school',
+      basePrice: 0,
+      duration: '',
+      defaultPaymentPlan: 'full_price',
+      isActive: true,
+      imageUrl: ''
+    });
+  };
+
   const handleCreateService = async () => {
     setIsSubmitting(true);
     try {
@@ -97,21 +111,12 @@ const ServiceManagement: React.FC<ServiceManagementProps> = ({ userRole = 'user'
 
       const newService = await response.json() as any;
       setServices(prev => [...prev, newService]);
-      setShowAddServiceModal(false);
-      setServiceFormData({
-        name: '',
-        description: '',
-        type: 'flight_school',
-        basePrice: 0,
-        duration: '',
-        defaultPaymentPlan: 'full_price',
-        isActive: true,
-        imageUrl: ''
-      });
-      alert('Service created successfully!');
+      setShowServiceModal(false);
+      resetForm();
+      toast.success('Service created successfully!');
     } catch (error) {
       console.error('Error creating service:', error);
-      alert('Error creating service. Please try again.');
+      toast.error('Error creating service. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -134,7 +139,15 @@ const ServiceManagement: React.FC<ServiceManagementProps> = ({ userRole = 'user'
       isActive: service.isActive,
       imageUrl: service.imageUrl || ''
     });
-    setShowEditServiceModal(true);
+    setModalMode('edit');
+    setShowServiceModal(true);
+  };
+
+  const handleAddService = () => {
+    resetForm();
+    setModalMode('add');
+    setSelectedService(null);
+    setShowServiceModal(true);
   };
 
   const handleUpdateService = async () => {
@@ -160,22 +173,13 @@ const ServiceManagement: React.FC<ServiceManagementProps> = ({ userRole = 'user'
           ? updatedService
           : service
       ));
-      setShowEditServiceModal(false);
+      setShowServiceModal(false);
       setSelectedService(null);
-      setServiceFormData({
-        name: '',
-        description: '',
-        type: 'flight_school',
-        basePrice: 0,
-        duration: '',
-        defaultPaymentPlan: 'full_price',
-        isActive: true,
-        imageUrl: ''
-      });
-      alert('Service updated successfully!');
+      resetForm();
+      toast.success('Service updated successfully!');
     } catch (error) {
       console.error('Error updating service:', error);
-      alert('Error updating service. Please try again.');
+      toast.error('Error updating service. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -196,10 +200,10 @@ const ServiceManagement: React.FC<ServiceManagementProps> = ({ userRole = 'user'
       }
 
       setServices(prev => prev.filter(s => s.id !== service.id));
-      alert('Service deleted successfully!');
+      toast.success('Service deleted successfully!');
     } catch (error) {
       console.error('Error deleting service:', error);
-      alert('Error deleting service. Please try again.');
+      toast.error('Error deleting service. Please try again.');
     }
   };
 
@@ -207,18 +211,18 @@ const ServiceManagement: React.FC<ServiceManagementProps> = ({ userRole = 'user'
     try {
       // Validate file type
       if (!file.type.startsWith('image/')) {
-        alert('Please select a valid image file.');
+        toast.error('Please select a valid image file.');
         return;
       }
 
       // Validate file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
-        alert('Image file size must be less than 5MB.');
+        toast.error('Image file size must be less than 5MB.');
         return;
       }
 
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append('image', file);
       
       console.log('Uploading service image:', file.name, 'Size:', file.size);
       
@@ -233,15 +237,15 @@ const ServiceManagement: React.FC<ServiceManagementProps> = ({ userRole = 'user'
         const data = await response.json() as { url: string };
         console.log('Upload success:', data);
         handleServiceFormChange('imageUrl', data.url);
-        alert('Service image uploaded successfully!');
+        toast.success('Service image uploaded successfully!');
       } else {
         const errorData = await response.text();
         console.error('Upload failed:', errorData);
-        alert(`Failed to upload service image: ${response.status} ${response.statusText}`);
+        toast.error(`Failed to upload service image: ${response.status} ${response.statusText}`);
       }
     } catch (error) {
       console.error('Upload error:', error);
-      alert('Error uploading service image. Please check your connection and try again.');
+      toast.error('Error uploading service image. Please check your connection and try again.');
     }
   };
 
@@ -271,7 +275,7 @@ const ServiceManagement: React.FC<ServiceManagementProps> = ({ userRole = 'user'
           </h2>
           {isAdmin && (
           <button
-            onClick={() => setShowAddServiceModal(true)}
+            onClick={handleAddService}
             className="px-4 py-2 bg-black text-white rounded-md text-sm hover:bg-gray-800"
           >
             Add Service
@@ -383,26 +387,31 @@ const ServiceManagement: React.FC<ServiceManagementProps> = ({ userRole = 'user'
         )}
       </div>
 
-      {/* Add Service Modal */}
-      {showAddServiceModal && (
+      {/* Unified Service Modal (Add/Edit) */}
+      {showServiceModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 flex flex-col max-h-[90vh]">
             {/* Fixed Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white rounded-t-lg">
-              <h3 className="text-lg font-medium text-gray-900">Add New Service</h3>
+              <h3 className="text-lg font-medium text-gray-900">
+                {modalMode === 'add' ? 'Add New Service' : 'Edit Service'}
+              </h3>
               <div className="flex space-x-2">
                 <button
-                  onClick={() => setShowAddServiceModal(false)}
+                  onClick={() => setShowServiceModal(false)}
                   className="px-4 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50"
                 >
                   Cancel
                 </button>
                 <button
-                  onClick={handleCreateService}
+                  onClick={modalMode === 'add' ? handleCreateService : handleUpdateService}
                   disabled={isSubmitting}
                   className="px-4 py-2 text-sm bg-black text-white rounded-md hover:bg-gray-800 disabled:opacity-50"
                 >
-                  {isSubmitting ? 'Creating...' : 'Create Service'}
+                  {isSubmitting 
+                    ? (modalMode === 'add' ? 'Creating...' : 'Updating...') 
+                    : (modalMode === 'add' ? 'Create Service' : 'Update Service')
+                  }
                 </button>
               </div>
             </div>
@@ -611,152 +620,6 @@ const ServiceManagement: React.FC<ServiceManagementProps> = ({ userRole = 'user'
                     </div>
                   </div>
                 )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Edit Service Modal */}
-      {showEditServiceModal && selectedService && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 flex flex-col max-h-[90vh]">
-            {/* Fixed Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white rounded-t-lg">
-              <h3 className="text-lg font-medium text-gray-900">Edit Service</h3>
-              <div className="flex space-x-2">
-                <button
-                  onClick={() => setShowEditServiceModal(false)}
-                  className="px-4 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleUpdateService}
-                  disabled={isSubmitting}
-                  className="px-4 py-2 text-sm bg-black text-white rounded-md hover:bg-gray-800 disabled:opacity-50"
-                >
-                  {isSubmitting ? 'Updating...' : 'Update Service'}
-                </button>
-              </div>
-            </div>
-
-            {/* Scrollable Content */}
-            <div className="flex-1 overflow-y-auto p-6">
-              <div className="space-y-6">
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Service Name</label>
-                    <input
-                      type="text"
-                      value={serviceFormData.name}
-                      onChange={e => handleServiceFormChange('name', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Private Pilot License Training"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                    <textarea
-                      value={serviceFormData.description}
-                      onChange={e => handleServiceFormChange('description', e.target.value)}
-                      rows={3}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Description of the service..."
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Service Image</label>
-                    <div className="space-y-2">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) handleServiceImageUpload(file);
-                        }}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                      {serviceFormData.imageUrl && (
-                        <div className="w-32 h-32 bg-gray-100 rounded-md overflow-hidden">
-                          <img 
-                            src={`${API_URL}${serviceFormData.imageUrl}`} 
-                            alt="Service preview" 
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Service Type</label>
-                      <select
-                        value={serviceFormData.type}
-                        onChange={e => handleServiceFormChange('type', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      >
-                        {serviceTypes.map(type => (
-                          <option key={type.value} value={type.value}>
-                            {type.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Payment Plan</label>
-                      <select
-                        value={serviceFormData.defaultPaymentPlan}
-                        onChange={e => handleServiceFormChange('defaultPaymentPlan', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      >
-                        {paymentPlans.map(plan => (
-                          <option key={plan.value} value={plan.value}>
-                            {plan.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Price (€)</label>
-                      <input
-                        type="number"
-                        value={serviceFormData.basePrice}
-                        onChange={e => handleServiceFormChange('basePrice', parseFloat(e.target.value) || 0)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="8500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Duration</label>
-                      <input
-                        type="text"
-                        value={serviceFormData.duration}
-                        onChange={e => handleServiceFormChange('duration', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="40-60 hours"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="flex items-center">
-                      <input
-                        type="checkbox"
-                        checked={serviceFormData.isActive}
-                        onChange={e => handleServiceFormChange('isActive', e.target.checked)}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      />
-                      <span className="ml-2 text-sm text-gray-700">Active Service</span>
-                    </label>
-                  </div>
-                </div>
               </div>
             </div>
           </div>

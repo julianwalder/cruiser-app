@@ -17,7 +17,7 @@ const storage = multer.memoryStorage();
 const upload = multer({ 
   storage: storage,
   limits: {
-    fileSize: 25 * 1024 * 1024, // 25MB limit
+    fileSize: 50 * 1024 * 1024, // 50MB limit for large images
   },
   fileFilter: (req, file, cb) => {
     // Accept only image files
@@ -31,8 +31,8 @@ const upload = multer({
 
 // Middleware
 app.use(cors());
-app.use(express.json({ limit: '50mb' })); // Increased limit for base64 image data
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+app.use(express.json({ limit: '100mb' })); // Increased limit for base64 image data
+app.use(express.urlencoded({ extended: true, limit: '100mb' }));
 
 // Mock data for development
 const mockData = {
@@ -72,12 +72,114 @@ const mockData = {
     }
   ],
   bases: [
-    { id: 1, name: 'Main Airport', location: 'Downtown', code: 'MAIN' },
-    { id: 2, name: 'Regional Field', location: 'Suburbs', code: 'REG' }
+    { 
+      id: 1, 
+      name: 'Main Airport', 
+      description: 'Primary aviation facility in the downtown area',
+      address: '123 Airport Road',
+      city: 'Downtown',
+      region: 'Central',
+      country: 'USA',
+      postalCode: '12345',
+      latitude: 40.7128,
+      longitude: -74.0060,
+      icaoCode: 'MAIN',
+      iataCode: 'MNA',
+      runwayLength: '8000',
+      runwaySurface: 'Asphalt',
+      elevation: '13',
+      frequency: '118.1',
+      operatingHours: '24/7',
+      phone: '+1 (555) 123-4567',
+      email: 'info@mainairport.com',
+      website: 'https://mainairport.com',
+      imageUrl: 'https://picsum.photos/400/300?random=1',
+      isActive: true,
+      createdAt: '2024-01-01T00:00:00Z',
+      updatedAt: '2024-01-01T00:00:00Z'
+    },
+    { 
+      id: 2, 
+      name: 'Regional Field', 
+      description: 'Secondary aviation facility in the suburbs',
+      address: '456 Aviation Blvd',
+      city: 'Suburbs',
+      region: 'North',
+      country: 'USA',
+      postalCode: '67890',
+      latitude: 40.7589,
+      longitude: -73.9851,
+      icaoCode: 'REG',
+      iataCode: 'RGF',
+      runwayLength: '6000',
+      runwaySurface: 'Concrete',
+      elevation: '25',
+      frequency: '118.3',
+      operatingHours: '6AM-10PM',
+      phone: '+1 (555) 987-6543',
+      email: 'info@regionalfield.com',
+      website: 'https://regionalfield.com',
+      imageUrl: 'https://picsum.photos/400/300?random=2',
+      isActive: true,
+      createdAt: '2024-01-15T00:00:00Z',
+      updatedAt: '2024-01-15T00:00:00Z'
+    }
   ],
   aircraft: [
-    { id: 1, name: 'Cessna 172', type: 'Single Engine', registration: 'N12345' },
-    { id: 2, name: 'Piper Arrow', type: 'Single Engine', registration: 'N67890' }
+    { 
+      id: 1, 
+      name: 'Cessna 172 Skyhawk', 
+      type: 'Single Engine Piston',
+      category: 'airplane',
+      registration: 'N12345',
+      manufacturer: 'Cessna',
+      model: '172',
+      year: 2015,
+      serialNumber: '172-12345',
+      totalTime: 1200,
+      lastInspection: '2024-01-15T00:00:00Z',
+      nextInspection: '2025-01-15T00:00:00Z',
+      fuelCapacity: 56,
+      maxTakeoffWeight: 2550,
+      cruiseSpeed: 120,
+      range: 800,
+      seats: 4,
+      engineType: 'Lycoming O-320',
+      engineHours: 1200,
+      propellerHours: 1200,
+      baseId: 1,
+      isActive: true,
+      imageUrl: 'https://picsum.photos/400/300?random=3',
+      createdAt: '2024-01-01T00:00:00Z',
+      updatedAt: '2024-01-01T00:00:00Z'
+    },
+    { 
+      id: 2, 
+      name: 'Piper PA-28R Arrow', 
+      type: 'Single Engine Piston',
+      category: 'airplane',
+      registration: 'N67890',
+      manufacturer: 'Piper',
+      model: 'PA-28R',
+      year: 2018,
+      serialNumber: 'PA28-67890',
+      totalTime: 800,
+      lastInspection: '2024-02-01T00:00:00Z',
+      nextInspection: '2025-02-01T00:00:00Z',
+      fuelCapacity: 84,
+      maxTakeoffWeight: 2750,
+      cruiseSpeed: 140,
+      range: 1000,
+      seats: 4,
+      engineType: 'Lycoming IO-360',
+      engineHours: 800,
+      propellerHours: 800,
+      baseId: 1,
+      isActive: true,
+      imageUrl: 'https://picsum.photos/400/300?random=4',
+      createdAt: '2024-01-15T00:00:00Z',
+      updatedAt: '2024-01-15T00:00:00Z'
+    }
   ],
   users: [
     { 
@@ -198,61 +300,7 @@ app.get('/api/info', (req, res) => {
   });
 });
 
-// Magic link endpoint
-app.post('/api/auth/magic-link', (req, res) => {
-  const { email } = req.body;
-  
-  if (!email) {
-    return res.status(400).json({ error: 'Email is required' });
-  }
-
-  // Generate a simple token for development
-  const token = Buffer.from(`${email}:${Date.now()}`).toString('base64');
-  
-  res.json({
-    message: 'Magic link sent successfully',
-    token: token,
-    magicLink: `http://localhost:3000/login?token=${token}`
-  });
-});
-
-// Auth verification
-app.get('/api/auth/verify', (req, res) => {
-  const { token } = req.query;
-  
-  if (token) {
-    try {
-      const decoded = Buffer.from(token, 'base64').toString();
-      const [email, timestamp] = decoded.split(':');
-      const tokenAge = Date.now() - parseInt(timestamp);
-      
-      if (tokenAge < 3600000) { // 1 hour
-        res.json({
-          authenticated: true,
-          message: 'Magic link token is valid',
-          user: { email, sub: email }
-        });
-      } else {
-        res.json({
-          authenticated: false,
-          message: 'Magic link token has expired'
-        });
-      }
-    } catch (error) {
-      res.json({
-        authenticated: false,
-        message: 'Invalid magic link token format'
-      });
-    }
-  } else {
-    res.json({
-      authenticated: false,
-      message: 'No token provided'
-    });
-  }
-});
-
-// Auth profile
+// Authentication handled by Cloudflare Access
 app.get('/api/auth/profile', (req, res) => {
   // For development, return a mock admin user
   res.json({
@@ -263,7 +311,8 @@ app.get('/api/auth/profile', (req, res) => {
       picture: null,
       custom_claims: { role: 'admin' }
     },
-    authenticated: true
+    authenticated: true,
+    message: 'Authentication handled by Cloudflare Access'
   });
 });
 
@@ -330,6 +379,83 @@ app.delete('/api/admin/services/:id', (req, res) => {
   
   mockData.services.splice(serviceIndex, 1);
   res.status(204).send();
+});
+
+// Upload service image
+app.post('/api/admin/services/upload-image', upload.single('image'), (req, res) => {
+  try {
+    console.log('Service image upload request received');
+    console.log('Request headers:', req.headers);
+    console.log('Request body keys:', Object.keys(req.body || {}));
+    console.log('File info:', req.file ? {
+      originalname: req.file.originalname,
+      mimetype: req.file.mimetype,
+      size: req.file.size
+    } : 'No file');
+
+    if (!req.file) {
+      console.error('No file provided in request');
+      return res.status(400).json({ 
+        error: 'No image file provided',
+        message: 'Please select an image file to upload'
+      });
+    }
+
+    // Validate file type
+    if (!req.file.mimetype.startsWith('image/')) {
+      console.error('Invalid file type:', req.file.mimetype);
+      return res.status(400).json({ 
+        error: 'Invalid file type',
+        message: 'Only image files are allowed'
+      });
+    }
+
+    // Validate file size (additional check)
+    const maxSize = 50 * 1024 * 1024; // 50MB
+    if (req.file.size > maxSize) {
+      console.error('File too large:', req.file.size);
+      return res.status(413).json({ 
+        error: 'File too large',
+        message: `File size must be less than ${maxSize / (1024 * 1024)}MB`
+      });
+    }
+
+    // For local development, we'll create a data URL from the uploaded file
+    const timestamp = Date.now();
+    const randomId = Math.random().toString(36).substring(2, 15);
+    const fileExtension = req.file.originalname.split('.').pop() || 'jpg';
+    
+    // Convert the file buffer to a data URL
+    const base64Data = req.file.buffer.toString('base64');
+    const mimeType = req.file.mimetype || 'image/jpeg';
+    const dataUrl = `data:${mimeType};base64,${base64Data}`;
+    
+    // Also provide a fallback URL for testing
+    const fallbackUrl = `https://picsum.photos/400/300?random=${randomId}`;
+    
+    console.log('Service image uploaded successfully:', {
+      filename: req.file.originalname,
+      size: req.file.size,
+      mimetype: req.file.mimetype
+    });
+    
+    res.json({ 
+      url: dataUrl, // Use data URL for local development
+      fallbackUrl: fallbackUrl, // Fallback for testing
+      message: 'Service image uploaded successfully (local development)',
+      filename: req.file.originalname,
+      size: req.file.size,
+      mimetype: req.file.mimetype,
+      note: 'Using data URL for local development. In production, this would be a cloud storage URL.'
+    });
+  } catch (error) {
+    console.error('Upload error:', error);
+    res.status(500).json({ 
+      error: 'Failed to upload image',
+      message: error.message,
+      details: 'Please try again with a smaller image or different format'
+    });
+  }
 });
 
 // Bases
@@ -466,8 +592,40 @@ app.delete('/api/admin/aircraft/:id', (req, res) => {
 // Upload aircraft image
 app.post('/api/admin/aircraft/upload-image', upload.single('image'), (req, res) => {
   try {
+    console.log('Aircraft image upload request received');
+    console.log('Request headers:', req.headers);
+    console.log('Request body keys:', Object.keys(req.body || {}));
+    console.log('File info:', req.file ? {
+      originalname: req.file.originalname,
+      mimetype: req.file.mimetype,
+      size: req.file.size
+    } : 'No file');
+
     if (!req.file) {
-      return res.status(400).json({ error: 'No image file provided' });
+      console.error('No file provided in request');
+      return res.status(400).json({ 
+        error: 'No image file provided',
+        message: 'Please select an image file to upload'
+      });
+    }
+
+    // Validate file type
+    if (!req.file.mimetype.startsWith('image/')) {
+      console.error('Invalid file type:', req.file.mimetype);
+      return res.status(400).json({ 
+        error: 'Invalid file type',
+        message: 'Only image files are allowed'
+      });
+    }
+
+    // Validate file size (additional check)
+    const maxSize = 50 * 1024 * 1024; // 50MB
+    if (req.file.size > maxSize) {
+      console.error('File too large:', req.file.size);
+      return res.status(413).json({ 
+        error: 'File too large',
+        message: `File size must be less than ${maxSize / (1024 * 1024)}MB`
+      });
     }
 
     // For local development, we'll create a data URL from the uploaded file
@@ -483,6 +641,12 @@ app.post('/api/admin/aircraft/upload-image', upload.single('image'), (req, res) 
     // Also provide a fallback URL for testing
     const fallbackUrl = `https://picsum.photos/400/300?random=${randomId}`;
     
+    console.log('Image uploaded successfully:', {
+      filename: req.file.originalname,
+      size: req.file.size,
+      mimetype: req.file.mimetype
+    });
+    
     res.json({ 
       url: dataUrl, // Use data URL for local development
       fallbackUrl: fallbackUrl, // Fallback for testing
@@ -494,7 +658,11 @@ app.post('/api/admin/aircraft/upload-image', upload.single('image'), (req, res) 
     });
   } catch (error) {
     console.error('Upload error:', error);
-    res.status(500).json({ error: 'Failed to upload image' });
+    res.status(500).json({ 
+      error: 'Failed to upload image',
+      message: error.message,
+      details: 'Please try again with a smaller image or different format'
+    });
   }
 });
 
@@ -588,8 +756,6 @@ app.get('/api/docs', (req, res) => {
     endpoints: [
       { method: 'GET', path: '/health', description: 'Health check' },
       { method: 'GET', path: '/api/info', description: 'App info' },
-      { method: 'POST', path: '/api/auth/magic-link', description: 'Magic link generation', example: { email: 'user@example.com' } },
-      { method: 'GET', path: '/api/auth/verify', description: 'Token verification', example: { token: '...' } },
       { method: 'GET', path: '/api/auth/profile', description: 'User profile (mock admin)' },
       { method: 'GET', path: '/api/admin/dashboard', description: 'Admin dashboard' },
       { method: 'GET', path: '/api/admin/services', description: 'Services list' },
@@ -652,6 +818,5 @@ app.use((err, req, res, next) => {
 app.listen(PORT, () => {
   console.log(`🚀 Development API server running on http://localhost:${PORT}`);
   console.log(`📊 Health check: http://localhost:${PORT}/health`);
-  console.log(`🔗 Magic link example: http://localhost:${PORT}/api/auth/magic-link`);
   console.log(`📱 Frontend should run on: http://localhost:3000`);
 }); 
