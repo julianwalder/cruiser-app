@@ -13,7 +13,7 @@
     "dev:frontend": "cd packages/frontend && npm run dev",
     "dev:local": "concurrently \"cd packages/frontend && npm run dev:simple\" \"cd packages/frontend && npm run api:dev\"",
     "dev:worker": "npx wrangler dev --env local --port 8788",
-    "build": "npm run build:backend && npm run build:frontend",
+    "build": "npm run build:frontend",
     "build:backend": "cd packages/backend && npm run build",
     "build:frontend": "cd packages/frontend && npm run build",
     "install:all": "npm install && cd packages/backend && npm install && cd ../frontend && npm install",
