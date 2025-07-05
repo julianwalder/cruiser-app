@@ -6,10 +6,6 @@ compatibility_date = "2024-01-01"
 [site]
 bucket = "packages/frontend/dist"
 
-[build]
-command = "cd packages/frontend && npm run build"
-cwd = "packages/frontend"
-
 # Import the environment configurations from the frontend package
 [env.production]
 name = "cruiser-aviation-frontend"
