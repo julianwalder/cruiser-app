@@ -82,7 +82,7 @@ binding = "STORAGE_STAGING"
 bucket_name = "cruiser-storage-staging"
 
 [[env.staging.kv_namespaces]]
-binding = "CACHE_STAGINNG"
+binding = "CACHE_STAGING"
 id = "b9b4a8aa1da64f3696c4778e03642cb8"
 
 [[env.staging.kv_namespaces]]
