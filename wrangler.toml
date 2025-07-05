@@ -6,6 +6,41 @@ compatibility_date = "2024-01-01"
 [site]
 bucket = "packages/frontend/dist"
 
+# Default environment variables (used by Cloudflare Pages)
+[vars]
+VITE_API_URL = "https://api.cruiseraviation.com"
+VITE_APP_NAME = "Cruiser Aviation"
+VITE_APP_VERSION = "1.0.0"
+VITE_ENVIRONMENT = "production"
+VITE_DEBUG = "false"
+VITE_FIREBASE_API_KEY = ""
+VITE_FIREBASE_AUTH_DOMAIN = ""
+VITE_FIREBASE_PROJECT_ID = ""
+VITE_FIREBASE_STORAGE_BUCKET = ""
+VITE_FIREBASE_MESSAGING_SENDER_ID = ""
+VITE_FIREBASE_APP_ID = ""
+VITE_FIREBASE_MEASUREMENT_ID = ""
+VITE_CLOUDFLARE_ACCESS_AUD = ""
+VITE_CLOUDFLARE_ACCESS_TEAM_DOMAIN = ""
+
+# Default environment bindings (used by Cloudflare Pages)
+[[d1_databases]]
+binding = "DB"
+database_name = "cruiser-db-prod"
+database_id = "f10d38b010894c3a8e75c77d2b0ae6a9"
+
+[[r2_buckets]]
+binding = "STORAGE"
+bucket_name = "cruiser-storage-prod"
+
+[[kv_namespaces]]
+binding = "CACHE"
+id = "f10d38b010894c3a8e75c77d2b0ae6a9"
+
+[[kv_namespaces]]
+binding = "STATIC_CONTENT"
+id = "f810882156314ae6962a4523d719327c"
+
 # Import the environment configurations from the frontend package
 [env.production]
 name = "cruiser-aviation-frontend"
