@@ -23,10 +23,6 @@ id = "b9b4a8aa1da64f3696c4778e03642cb8"
 binding = "__STATIC_CONTENT"
 id = "b9b4a8aa1da64f3696c4778e03642cb8"
 
-# Cloudflare Access JWT secret (you'll need to get this from your Cloudflare dashboard)
-[env.staging.secrets]
-JWT_SECRET = "your-cloudflare-access-jwt-secret-here"
-
 # Staging environment variables
 [env.staging.vars]
 VITE_API_URL = "https://staging-api.cruiseraviation.com"
@@ -66,10 +62,6 @@ id = "f10d38b010894c3a8e75c77d2b0ae6a9"
 [[env.production.kv_namespaces]]
 binding = "__STATIC_CONTENT"
 id = "f10d38b010894c3a8e75c77d2b0ae6a9"
-
-# Cloudflare Access JWT secret (you'll need to get this from your Cloudflare dashboard)
-[env.production.secrets]
-JWT_SECRET = "your-cloudflare-access-jwt-secret-here"
 
 # Production environment variables
 [env.production.vars]
