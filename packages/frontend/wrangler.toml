@@ -40,7 +40,7 @@ id = "b9b4a8aa1da64f3696c4778e03642cb8"
 
 [[env.staging.kv_namespaces]]
 binding = "STATIC_CONTENT"
-id = "bd25319670d844718fbae8ac0656e132"
+id = "cde2db60fa8947d79a44b0869a5f8995"
 
 # Staging environment variables
 [env.staging.vars]
@@ -87,7 +87,7 @@ id = "f10d38b010894c3a8e75c77d2b0ae6a9"
 
 [[env.production.kv_namespaces]]
 binding = "STATIC_CONTENT"
-id = "f810882156314ae6962a4523d719327c"
+id = "679667a04c0b4beeb88579cbeacce07e"
 
 # Production environment variables
 [env.production.vars]
@@ -134,7 +134,7 @@ id = "b9b4a8aa1da64f3696c4778e03642cb8"
 
 [[env.local.kv_namespaces]]
 binding = "STATIC_CONTENT"
-id = "bd25319670d844718fbae8ac0656e132"
+id = "cde2db60fa8947d79a44b0869a5f8995"
 
 # Cloudflare Access JWT secret (disabled for local development)
 [env.local.secrets]

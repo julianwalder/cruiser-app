@@ -68,11 +68,11 @@ wrangler r2 bucket create cruiser-storage-prod
 ```bash
 # Create staging KV namespace
 wrangler kv:namespace create "CACHE" --env staging
-wrangler kv:namespace create "__STATIC_CONTENT" --env staging
+wrangler kv:namespace create "STATIC_CONTENT" --env staging
 
 # Create production KV namespace
 wrangler kv:namespace create "CACHE" --env production
-wrangler kv:namespace create "__STATIC_CONTENT" --env production
+wrangler kv:namespace create "STATIC_CONTENT" --env production
 ```
 
 ### 6. Set Environment Variables
