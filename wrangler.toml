@@ -117,20 +117,20 @@ name = "cruiser-aviation-frontend-local"
 main = "packages/frontend/src/worker.ts"
 
 [[env.local.d1_databases]]
-binding = "DB"
+binding = "DB_LOCAL"
 database_name = "cruiser-db-staging"
 database_id = "73665fa6-b020-45ba-899c-e495344a4ee3"
 
 [[env.local.r2_buckets]]
-binding = "STORAGE"
+binding = "STORAGE_LOCAL"
 bucket_name = "cruiser-storage-staging"
 
 [[env.local.kv_namespaces]]
-binding = "CACHE"
+binding = "CACHE_LOCAL"
 id = "b9b4a8aa1da64f3696c4778e03642cb8"
 
 [[env.local.kv_namespaces]]
-binding = "STATIC_CONTENT"
+binding = "STATIC_CONTENT_LOCAL"
 id = "cde2db60fa8947d79a44b0869a5f8995"
 
 [env.local.vars]

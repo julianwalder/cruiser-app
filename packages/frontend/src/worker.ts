@@ -90,6 +90,29 @@ export default {
     }
 
     // Handle static assets
+    const environment = env.VITE_ENVIRONMENT || 'production';
+    
+    if (environment === 'local') {
+      // For local development, redirect to Vite dev server
+      const viteUrl = 'http://localhost:3000';
+      const viteRequest = new Request(`${viteUrl}${url.pathname}${url.search}`, {
+        method: request.method,
+        headers: request.headers,
+        body: request.body,
+      });
+      
+      try {
+        const response = await fetch(viteRequest);
+        return response;
+      } catch (error) {
+        return new Response('Vite dev server not running. Please start it with: npm run dev:simple', { 
+          status: 500,
+          headers: { 'Content-Type': 'text/plain' }
+        });
+      }
+    }
+    
+    // For staging/production, serve from KV
     try {
       const asset = await getAssetFromKV(
         {
@@ -117,17 +140,17 @@ export default {
     } catch (e) {
       // If asset not found, serve index.html for SPA routing
       if (e instanceof Error && e.message.includes('not found')) {
-                  try {
-            const indexAsset = await getAssetFromKV(
-              {
-                request: new Request(`${url.origin}/index.html`),
-                waitUntil: ctx.waitUntil.bind(ctx),
-              },
-              {
-                ASSET_NAMESPACE: bindings.STATIC_CONTENT,
-                ASSET_MANIFEST: {},
-              }
-            );
+        try {
+          const indexAsset = await getAssetFromKV(
+            {
+              request: new Request(`${url.origin}/index.html`),
+              waitUntil: ctx.waitUntil.bind(ctx),
+            },
+            {
+              ASSET_NAMESPACE: bindings.STATIC_CONTENT,
+              ASSET_MANIFEST: {},
+            }
+          );
           return new Response(indexAsset.body, indexAsset);
         } catch (indexError) {
           return new Response('Not Found', { status: 404 });
