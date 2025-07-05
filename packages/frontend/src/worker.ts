@@ -125,6 +125,11 @@ export default {
       // Remove leading slash for KV lookup
       const key = assetPath.startsWith('/') ? assetPath.slice(1) : assetPath;
       
+      // Debug logging
+      console.log('Looking for asset with key:', key);
+      console.log('Environment:', env.VITE_ENVIRONMENT);
+      console.log('Static content binding available:', !!bindings.STATIC_CONTENT);
+      
       // Try to get the asset from KV
       const asset = await bindings.STATIC_CONTENT?.get(key, { type: 'arrayBuffer' });
       
