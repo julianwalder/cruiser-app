@@ -25,22 +25,22 @@ enabled = false
 [env.staging.triggers]
 crons = []
 
-[[env.staging.d1_databases]]
-binding = "DB"
-database_name = "cruiser-db-staging"
-database_id = "73665fa6-b020-45ba-899c-e495344a4ee3"
-
-[[env.staging.r2_buckets]]
-binding = "STORAGE"
-bucket_name = "cruiser-storage-staging"
-
 [[env.staging.kv_namespaces]]
 binding = "CACHE"
 id = "b9b4a8aa1da64f3696c4778e03642cb8"
 
 [[env.staging.kv_namespaces]]
 binding = "STATIC_CONTENT"
-id = "cde2db60fa8947d79a44b0869a5f8995"
+id = "169a44fd52ec4d9d885a44ecba941dc4"
+
+[[env.staging.d1_databases]]
+binding = "DB"
+database_name = "DB_STAGING"
+database_id = "73665fa6-b020-45ba-899c-e495344a4ee3"
+
+[[env.staging.r2_buckets]]
+binding = "STORAGE"
+bucket_name = "cruiser-storage-staging"
 
 # Staging environment variables
 [env.staging.vars]
