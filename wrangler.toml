@@ -72,6 +72,9 @@ crons = []
 name = "cruiser-aviation-frontend-staging"
 main = "packages/frontend/src/worker.ts"
 
+[env.staging.site]
+bucket = "packages/frontend/dist"
+
 [[env.staging.d1_databases]]
 binding = "DB_STAGING"
 database_name = "cruiser-db-staging"
