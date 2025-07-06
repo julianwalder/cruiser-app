@@ -78,7 +78,20 @@ export default {
     // Handle API requests - redirect to backend
     if (url.pathname.startsWith('/api/')) {
       console.log(`API request detected: ${url.pathname}`);
-      const apiUrl = env.VITE_API_URL || 'https://api.cruiseraviation.com';
+      
+      // Use environment-specific API URL
+      let apiUrl;
+      switch (environment) {
+        case 'staging':
+          apiUrl = 'https://cruiser-aviation-api-staging.julian-pad.workers.dev';
+          break;
+        case 'local':
+          apiUrl = 'http://localhost:8787';
+          break;
+        default: // production
+          apiUrl = env.VITE_API_URL || 'https://api.cruiseraviation.com';
+      }
+      
       console.log(`Redirecting to API: ${apiUrl}${url.pathname}${url.search}`);
       
       const apiRequest = new Request(`${apiUrl}${url.pathname}${url.search}`, {
