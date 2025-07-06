@@ -63,7 +63,7 @@ const app = new Hono<{ Bindings: Env }>();
 app.use('*', logger());
 app.use('*', prettyJSON());
 app.use('*', cors({
-  origin: ['http://localhost:3000', 'https://cruiseraviation.com', 'https://staging.cruiseraviation.com'],
+  origin: ['http://localhost:3000', 'https://app.cruiseraviation.com', 'https://staging.cruiseraviation.com'],
   credentials: true,
 }));
 

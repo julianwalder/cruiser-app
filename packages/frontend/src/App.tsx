@@ -102,28 +102,18 @@ function App() {
       </Helmet>
 
       <Routes>
+        {/* Redirect root to login */}
+        <Route path="/" element={<Navigate to="/login" replace />} />
+        
         {/* Public routes */}
-        <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
-
+        
         {/* Protected routes */}
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <UnifiedDashboard userRole="user" />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/admin"
-          element={
-            <AdminRoute>
-              <UnifiedDashboard userRole="super_admin" />
-            </AdminRoute>
-          }
-        />
+        <Route path="/dashboard" element={
+          <ProtectedRoute>
+            <UnifiedDashboard />
+          </ProtectedRoute>
+        } />
         
         {/* Test route */}
         <Route
@@ -138,8 +128,8 @@ function App() {
           }
         />
 
-        {/* 404 route */}
-        <Route path="*" element={<NotFoundPage />} />
+        {/* Catch all - redirect to login */}
+        <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </>
   );
