@@ -37,6 +37,7 @@ jobs:
           npx wrangler kv bulk put --binding=STATIC_CONTENT_STAGING --env staging packages/frontend/kv-data.json
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           
       - name: Deploy to Cloudflare Workers Staging
         run: |
