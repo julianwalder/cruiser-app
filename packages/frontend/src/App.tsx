@@ -12,87 +12,6 @@ import { LoginPage } from '@pages/LoginPage';
 import { UnifiedDashboard } from '@pages/UnifiedDashboard';
 import { NotFoundPage } from '@pages/NotFoundPage';
 
-// Verify Page Component
-const VerifyPage: React.FC = () => {
-  const [isVerifying, setIsVerifying] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-
-  useEffect(() => {
-    const token = searchParams.get('token');
-    if (!token) {
-      setError('No verification token provided');
-      setIsVerifying(false);
-      return;
-    }
-
-    verifyMagicLink(token);
-  }, [searchParams]);
-
-  const verifyMagicLink = async (token: string) => {
-    try {
-      const response = await fetch(`/api/auth/verify`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ token }),
-      });
-
-      const data = await response.json() as { access_token: string; user?: { role: string }; message?: string };
-
-      if (response.ok) {
-        // Store the JWT token
-        localStorage.setItem('access_token', data.access_token);
-        
-        // Force a page reload to trigger the auth context to pick up the JWT token
-        window.location.href = data.user?.role === 'super_admin' || data.user?.role === 'base_manager' 
-          ? '/admin' 
-          : '/dashboard';
-      } else {
-        setError(data.message || 'Invalid magic link');
-        setIsVerifying(false);
-      }
-    } catch (error) {
-      console.error('Verification error:', error);
-      setError('Network error during verification');
-      setIsVerifying(false);
-    }
-  };
-
-  if (isVerifying) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Verifying your magic link...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="text-red-600 text-6xl mb-4">⚠️</div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Verification Failed</h1>
-          <p className="text-gray-600 mb-8">{error}</p>
-          <button
-            onClick={() => navigate('/login')}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-          >
-            Back to Login
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  return null;
-};
-
 // Protected Route Component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, loading } = useAuth();
@@ -186,7 +105,6 @@ function App() {
         {/* Public routes */}
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/verify" element={<VerifyPage />} />
 
         {/* Protected routes */}
         <Route
