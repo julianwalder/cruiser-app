@@ -140,6 +140,41 @@ export default {
     const assetKey = url.pathname === '/' ? 'index.html' : url.pathname.substring(1);
     console.log(`Looking for asset with key: ${assetKey}`);
     
+    // For root path, we need to handle the hashed index.html file
+    if (url.pathname === '/' && bindings.STATIC_CONTENT) {
+      try {
+        // First try to get the hashed index.html file
+        const keys = await bindings.STATIC_CONTENT.list();
+        const indexFile = keys.keys.find(key => 
+          key.name.startsWith('index.') && key.name.endsWith('.html')
+        );
+        
+        if (indexFile) {
+          console.log(`Found hashed index file: ${indexFile.name}`);
+          const response = await getAssetFromKV(
+            {
+              request: new Request(`https://example.com/${indexFile.name}`),
+              waitUntil: ctx.waitUntil.bind(ctx),
+            },
+            {
+              ASSET_NAMESPACE: bindings.STATIC_CONTENT,
+              ASSET_MANIFEST: {},
+              cacheControl: {
+                browserTTL: 60 * 60 * 24 * 365, // 1 year
+                edgeTTL: 60 * 60 * 24 * 365, // 1 year
+                bypassCache: false,
+              },
+            }
+          );
+          
+          console.log(`Hashed index file served successfully: ${indexFile.name} (${response.status})`);
+          return response;
+        }
+      } catch (listError) {
+        console.error('Could not list keys for index file lookup:', listError);
+      }
+    }
+    
     try {
       // Use getAssetFromKV to handle asset serving with proper fallbacks
       const response = await getAssetFromKV(
