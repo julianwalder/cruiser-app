@@ -3,12 +3,12 @@ name = "cruiser-aviation-app"
 main = "packages/frontend/src/worker.ts"
 compatibility_date = "2024-01-01"
 
-# Explicitly configure this as a Workers project, not Pages
+# Build configuration for Workers Sites
 [build]
 command = "npm run build"
 cwd = "packages/frontend"
 
-# Ensure this is treated as a Workers deployment
+# Workers Sites configuration
 [site]
 bucket = "packages/frontend/dist"
 

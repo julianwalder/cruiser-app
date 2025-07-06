@@ -1,0 +1,50 @@
+# API Worker Configuration
+name = "cruiser-aviation-api"
+main = "packages/backend/src/worker-api.ts"
+compatibility_date = "2024-01-01"
+
+# Production API environment
+[env.production]
+name = "cruiser-aviation-api"
+main = "packages/backend/src/worker-api.ts"
+compatibility_date = "2024-01-01"
+
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "cruiser-db-prod"
+database_id = "4e925626-5ce3-4f0a-ad1b-e38a45068d5e"
+
+[[env.production.r2_buckets]]
+binding = "STORAGE"
+bucket_name = "cruiser-storage-prod"
+
+[[env.production.kv_namespaces]]
+binding = "CACHE"
+id = "f10d38b010894c3a8e75c77d2b0ae6a9"
+
+[env.production.vars]
+JWT_SECRET = "your-jwt-secret-here"
+CLOUDFLARE_ACCESS_AUD = "https://app.cruiseraviation.com"
+
+# Staging API environment
+[env.staging]
+name = "cruiser-aviation-api-staging"
+main = "packages/backend/src/worker-api.ts"
+compatibility_date = "2024-01-01"
+
+[[env.staging.d1_databases]]
+binding = "DB"
+database_name = "cruiser-db-staging"
+database_id = "73665fa6-b020-45ba-899c-e495344a4ee3"
+
+[[env.staging.r2_buckets]]
+binding = "STORAGE"
+bucket_name = "cruiser-storage-staging"
+
+[[env.staging.kv_namespaces]]
+binding = "CACHE"
+id = "b9b4a8aa1da64f3696c4778e03642cb8"
+
+[env.staging.vars]
+JWT_SECRET = "your-jwt-secret-here"
+CLOUDFLARE_ACCESS_AUD = "https://staging.cruiseraviation.com" 
