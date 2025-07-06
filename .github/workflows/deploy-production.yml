@@ -40,7 +40,7 @@ jobs:
           cd packages/frontend
           node scripts/upload-kv.js
           cd ../..
-          npx wrangler kv:bulk put packages/frontend/kv-data.json --binding=STATIC_CONTENT --env production
+          npx wrangler kv bulk put --binding=STATIC_CONTENT --env production packages/frontend/kv-data.json
           
       - name: Notify deployment
         run: |
