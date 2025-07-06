@@ -7,6 +7,9 @@ compatibility_date = "2024-01-01"
 command = "npm run build"
 cwd = "packages/frontend"
 
+# Use wrangler deploy instead of versions upload for Workers Sites
+upload_command = "npx wrangler deploy --env staging"
+
 # Default environment variables (used by Cloudflare Pages)
 [vars]
 VITE_API_URL = "https://api.cruiseraviation.com"
