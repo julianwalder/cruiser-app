@@ -35,6 +35,13 @@ jobs:
           command: deploy --env staging
           workingDirectory: .
           
+      - name: Upload KV data for staging
+        run: |
+          cd packages/frontend
+          node scripts/upload-kv.js
+          cd ../..
+          npx wrangler kv:bulk put packages/frontend/kv-data.json --binding=STATIC_CONTENT_STAGING --env staging
+          
       - name: Notify deployment
         run: |
           echo "✅ Successfully deployed to staging environment!"

@@ -1,0 +1,18 @@
+# Ignore files for Cloudflare Workers deployment
+node_modules/
+.git/
+.github/
+docs/
+*.log
+.env
+.env.local
+.env.*.local
+.DS_Store
+*.md
+!README.md
+packages/backend/
+scripts/
+docker-compose*.yml
+Dockerfile*
+nginx/
+*.sql 

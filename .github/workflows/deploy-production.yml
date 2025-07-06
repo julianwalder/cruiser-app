@@ -33,10 +33,17 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: deploy --env production
-          workingDirectory: packages/frontend
+          workingDirectory: .
+          
+      - name: Upload KV data for production
+        run: |
+          cd packages/frontend
+          node scripts/upload-kv.js
+          cd ../..
+          npx wrangler kv:bulk put packages/frontend/kv-data.json --binding=STATIC_CONTENT --env production
           
       - name: Notify deployment
         run: |
           echo "✅ Successfully deployed to production environment!"
-          echo "🌍 Production URL: https://cruiser-aviation-frontend.julian-pad.workers.dev"
+          echo "🌍 Production URL: https://app.cruiseraviation.com"
           echo "📊 Deployment completed at $(date)" 
