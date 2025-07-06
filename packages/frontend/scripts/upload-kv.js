@@ -25,7 +25,11 @@ function walkDir(dir, baseDir = dir) {
       files.push(...walkDir(fullPath, baseDir));
     } else {
       const relativePath = path.relative(baseDir, fullPath);
-      files.push(relativePath);
+      files.push({
+        path: relativePath,
+        fullPath: fullPath,
+        size: stat.size
+      });
     }
   }
   
@@ -49,60 +53,92 @@ function createCanonicalKey(filePath) {
 
 function generateKVData() {
   if (!fs.existsSync(distPath)) {
-    console.error('Dist directory does not exist. Please run build first.');
+    console.error('Dist directory not found. Please run npm run build first.');
     process.exit(1);
   }
 
   const files = walkDir(distPath);
-  const kvData = {};
+  const kvData = [];
 
   for (const file of files) {
-    const filePath = path.join(distPath, file);
-    const content = readFileAsBase64(filePath);
+    const content = readFileAsBase64(file.fullPath);
     
     // Determine content type based on file extension
-    const ext = path.extname(file).toLowerCase();
     let contentType = 'text/plain';
-    
-    if (ext === '.html') contentType = 'text/html';
-    else if (ext === '.css') contentType = 'text/css';
-    else if (ext === '.js') contentType = 'application/javascript';
-    else if (ext === '.json') contentType = 'application/json';
-    else if (ext === '.png') contentType = 'image/png';
-    else if (ext === '.jpg' || ext === '.jpeg') contentType = 'image/jpeg';
-    else if (ext === '.svg') contentType = 'image/svg+xml';
-    else if (ext === '.ico') contentType = 'image/x-icon';
-    else if (ext === '.woff') contentType = 'font/woff';
-    else if (ext === '.woff2') contentType = 'font/woff2';
-    else if (ext === '.ttf') contentType = 'font/ttf';
-    else if (ext === '.eot') contentType = 'application/vnd.ms-fontobject';
-    
-    // Create the main entry with the hashed filename
-    kvData[file] = {
+    if (file.path.endsWith('.html')) {
+      contentType = 'text/html';
+    } else if (file.path.endsWith('.css')) {
+      contentType = 'text/css';
+    } else if (file.path.endsWith('.js')) {
+      contentType = 'application/javascript';
+    } else if (file.path.endsWith('.json')) {
+      contentType = 'application/json';
+    } else if (file.path.endsWith('.png')) {
+      contentType = 'image/png';
+    } else if (file.path.endsWith('.jpg') || file.path.endsWith('.jpeg')) {
+      contentType = 'image/jpeg';
+    } else if (file.path.endsWith('.svg')) {
+      contentType = 'image/svg+xml';
+    } else if (file.path.endsWith('.ico')) {
+      contentType = 'image/x-icon';
+    }
+
+    // Add the hashed filename entry
+    kvData.push({
+      key: file.path,
       value: content,
       metadata: {
-        contentType: contentType
+        contentType: contentType,
+        size: file.size
       }
-    };
-    
-    // Create canonical keys for HTML files and important assets
-    if (ext === '.html' || ext === '.ico' || ext === '.svg') {
-      const canonicalKey = createCanonicalKey(file);
-      if (canonicalKey !== file) {
-        kvData[canonicalKey] = {
+    });
+
+    // Create canonical keys for important files
+    if (file.path.endsWith('.html')) {
+      const canonicalKey = file.path.replace(/\.\w+\.html$/, '.html');
+      if (canonicalKey !== file.path) {
+        kvData.push({
+          key: canonicalKey,
           value: content,
           metadata: {
-            contentType: contentType
+            contentType: contentType,
+            size: file.size
           }
-        };
-        console.log(`Created canonical key: ${canonicalKey} -> ${file}`);
+        });
       }
+    }
+
+    // Special handling for index.html
+    if (file.path === 'index.html') {
+      kvData.push({
+        key: '/',
+        value: content,
+        metadata: {
+          contentType: contentType,
+          size: file.size
+        }
+      });
     }
   }
 
-  fs.writeFileSync(outputPath, JSON.stringify(kvData, null, 2));
-  console.log(`Generated KV data with ${Object.keys(kvData).length} entries`);
-  console.log(`Output saved to: ${outputPath}`);
+  return kvData;
 }
 
-generateKVData(); 
+// Generate and save KV data
+const kvData = generateKVData();
+fs.writeFileSync(outputPath, JSON.stringify(kvData, null, 2));
+
+console.log(`Generated KV data with ${kvData.length} entries`);
+console.log(`Output saved to: ${outputPath}`);
+
+// Log the canonical keys that were created
+const canonicalKeys = kvData.filter(entry => 
+  entry.key === 'index.html' || 
+  entry.key === '/' || 
+  entry.key.endsWith('/index.html')
+).map(entry => entry.key);
+
+if (canonicalKeys.length > 0) {
+  console.log('\nCanonical keys created:');
+  canonicalKeys.forEach(key => console.log(`  - ${key}`));
+} 
