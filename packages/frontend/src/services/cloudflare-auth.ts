@@ -10,12 +10,39 @@ export interface CloudflareUser {
   iat: number;
   exp: number;
   custom_claims?: Record<string, any>;
+  // Cloudflare Access specific fields
+  cf?: {
+    identity?: {
+      user_uuid?: string;
+      email?: string;
+      name?: string;
+      groups?: string[];
+    };
+  };
 }
 
 export interface CloudflareAuthConfig {
   jwtSecret: string;
   audience: string;
   teamDomain: string;
+}
+
+export enum UserRole {
+  USER = 'user',
+  INSTRUCTOR = 'instructor',
+  BASEMANAGER = 'basemanager',
+  ADMIN = 'admin',
+  SUPERADMIN = 'superadmin',
+}
+
+export interface AuthenticatedUser {
+  id: string;
+  email: string;
+  name?: string;
+  picture?: string;
+  role: UserRole;
+  groups: string[];
+  authenticated: boolean;
 }
 
 export class CloudflareAuthService {
@@ -90,6 +117,104 @@ export class CloudflareAuthService {
     return {
       user,
       authenticated: user !== null
+    };
+  }
+
+  /**
+   * Determine user role from Cloudflare Access groups
+   */
+  determineUserRole(user: CloudflareUser): UserRole {
+    const groups = user.cf?.identity?.groups || [];
+    
+    // Role hierarchy: superadmin > admin > basemanager > instructor > user
+    if (groups.includes('superadmin') || groups.includes('super_admin')) {
+      return UserRole.SUPERADMIN;
+    }
+    if (groups.includes('admin') || groups.includes('administrators')) {
+      return UserRole.ADMIN;
+    }
+    if (groups.includes('basemanager') || groups.includes('base_manager')) {
+      return UserRole.BASEMANAGER;
+    }
+    if (groups.includes('instructor') || groups.includes('flight_instructor')) {
+      return UserRole.INSTRUCTOR;
+    }
+    
+    return UserRole.USER;
+  }
+
+  /**
+   * Get authenticated user with role information
+   */
+  async getAuthenticatedUser(request: Request): Promise<AuthenticatedUser | null> {
+    const user = await this.getUserFromRequest(request);
+    
+    if (!user) {
+      return null;
+    }
+
+    return {
+      id: user.sub,
+      email: user.email,
+      name: user.name || user.cf?.identity?.name,
+      picture: user.picture,
+      role: this.determineUserRole(user),
+      groups: user.cf?.identity?.groups || [],
+      authenticated: true,
+    };
+  }
+
+  /**
+   * Check if user has required role
+   */
+  hasRequiredRole(userRole: UserRole, requiredRole: UserRole): boolean {
+    const roleHierarchy = {
+      [UserRole.USER]: 1,
+      [UserRole.INSTRUCTOR]: 2,
+      [UserRole.BASEMANAGER]: 3,
+      [UserRole.ADMIN]: 4,
+      [UserRole.SUPERADMIN]: 5,
+    };
+
+    return roleHierarchy[userRole] >= roleHierarchy[requiredRole];
+  }
+
+  /**
+   * Check if user has any of the required roles
+   */
+  hasAnyRole(userRole: UserRole, requiredRoles: UserRole[]): boolean {
+    return requiredRoles.some(role => this.hasRequiredRole(userRole, role));
+  }
+
+  /**
+   * Create authentication middleware for role-based access
+   */
+  createAuthMiddleware(requiredRole: UserRole = UserRole.USER) {
+    return async (request: Request): Promise<Response | null> => {
+      const user = await this.getAuthenticatedUser(request);
+      
+      if (!user) {
+        return new Response(JSON.stringify({ 
+          error: 'Authentication required',
+          message: 'Please log in to access this resource'
+        }), {
+          status: 401,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+
+      if (!this.hasRequiredRole(user.role, requiredRole)) {
+        return new Response(JSON.stringify({ 
+          error: 'Insufficient permissions',
+          message: `This resource requires ${requiredRole} role or higher`,
+          userRole: user.role
+        }), {
+          status: 403,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+
+      return null; // Continue to handler
     };
   }
 }

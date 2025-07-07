@@ -22,6 +22,7 @@ import {
   Building2,
   TrendingUp
 } from 'lucide-react';
+import { useRoleTesting } from '../hooks/useRoleTesting';
 
 // Modern monocolor icons
 const Icons = {
@@ -54,7 +55,7 @@ interface AppLayoutProps {
   children: React.ReactNode;
   activeSection?: string;
   onSectionChange?: (section: string) => void;
-  userType?: 'user' | 'admin';
+  userType?: 'user' | 'admin' | 'instructor' | 'base_manager' | 'super_admin';
   title?: string;
 }
 
@@ -67,35 +68,46 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
 }) => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  
+  // Use the role testing hook for dynamic menu generation
+  const { getAccessibleMenuItems } = useRoleTesting();
 
-  // Define menu items based on user type
+  // Define all possible menu items
+  const allMenuItems: Record<string, MenuItem> = {
+    dashboard: { id: 'dashboard', label: 'Dashboard', icon: Icons.Dashboard },
+    flights: { id: 'flights', label: 'Flights', icon: Icons.Flights },
+    fleet: { id: 'fleet', label: 'Fleet', icon: Icons.Fleet },
+    bases: { id: 'bases', label: 'Bases', icon: Icons.Bases },
+    services: { id: 'services', label: 'Services', icon: Icons.Services },
+    users: { id: 'users', label: 'Users', icon: Icons.Users },
+    roles: { id: 'roles', label: 'Roles', icon: Icons.Roles },
+    reports: { id: 'reports', label: 'Reports', icon: Icons.Reports },
+    flightlog: { id: 'flightlog', label: 'Flight Log', icon: Icons.FlightLog },
+    invoices: { id: 'invoices', label: 'Invoices', icon: Icons.Invoices },
+    payments: { id: 'payments', label: 'Payments', icon: Icons.Payments },
+    profile: { id: 'profile', label: 'Profile', icon: Icons.Profile },
+    settings: { id: 'settings', label: 'Settings', icon: Icons.Settings },
+  };
+
+  // Get accessible menu items based on role capabilities
   const getMenuItems = (): MenuItem[] => {
-    if (userType === 'admin') {
-      return [
-        { id: 'dashboard', label: 'Dashboard', icon: Icons.Dashboard },
-        { id: 'users', label: 'Users', icon: Icons.Users },
-        { id: 'roles', label: 'Roles', icon: Icons.Roles },
-        { id: 'bases', label: 'Bases', icon: Icons.Bases },
-        { id: 'fleet', label: 'Fleet', icon: Icons.Fleet },
-        { id: 'services', label: 'Services', icon: Icons.Services },
-        { id: 'flights', label: 'Flights', icon: Icons.Flights },
-        { id: 'reports', label: 'Reports', icon: Icons.Reports },
-        { id: 'settings', label: 'Settings', icon: Icons.Settings },
-      ];
-    } else {
-      return [
-        { id: 'dashboard', label: 'Dashboard', icon: Icons.Dashboard },
-        { id: 'flights', label: 'My Flights', icon: Icons.Flights },
-        { id: 'flightlog', label: 'Flight Log', icon: Icons.FlightLog },
-        { id: 'services', label: 'Services', icon: Icons.Services },
-        { id: 'invoices', label: 'Invoices', icon: Icons.Invoices },
-        { id: 'payments', label: 'Payments', icon: Icons.Payments },
-        { id: 'bases', label: 'Bases', icon: Icons.Bases },
-        { id: 'fleet', label: 'Fleet', icon: Icons.Fleet },
-        { id: 'profile', label: 'Profile', icon: Icons.Profile },
-        { id: 'settings', label: 'Settings', icon: Icons.Settings },
-      ];
-    }
+    const accessibleMenuIds = getAccessibleMenuItems();
+    
+    // Filter menu items based on accessible sections
+    const menuItems = accessibleMenuIds
+      .map(id => allMenuItems[id])
+      .filter(item => item !== undefined);
+    
+    console.log('🔍 Dynamic Menu Generation:', {
+      userType,
+      accessibleMenuIds,
+      menuItems: menuItems.map(item => item.id),
+      allMenuItems: Object.keys(allMenuItems),
+      flightlogInAccessible: accessibleMenuIds.includes('flightlog'),
+      flightlogInMenuItems: menuItems.some(item => item.id === 'flightlog')
+    });
+    
+    return menuItems;
   };
 
   const menuItems = getMenuItems();
@@ -107,18 +119,38 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
   };
 
   const getUserInfo = () => {
-    if (userType === 'admin') {
-      return {
-        name: 'Admin User',
-        role: 'Super Admin',
-        initial: 'A'
-      };
-    } else {
-      return {
-        name: 'User',
-        role: 'Pilot',
-        initial: 'U'
-      };
+    switch (userType) {
+      case 'super_admin':
+        return {
+          name: 'Super Admin',
+          role: 'Super Administrator',
+          initial: 'S'
+        };
+      case 'admin':
+        return {
+          name: 'Admin User',
+          role: 'Administrator',
+          initial: 'A'
+        };
+      case 'base_manager':
+        return {
+          name: 'Base Manager',
+          role: 'Base Manager',
+          initial: 'B'
+        };
+      case 'instructor':
+        return {
+          name: 'Instructor',
+          role: 'Flight Instructor',
+          initial: 'I'
+        };
+      case 'user':
+      default:
+        return {
+          name: 'User',
+          role: 'Pilot',
+          initial: 'U'
+        };
     }
   };
 
@@ -149,7 +181,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
           <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200">
             {!sidebarCollapsed && (
               <h1 className="text-xl font-bold text-gray-900">
-                ✈️ {userType === 'admin' ? 'Cruiser Admin' : 'Cruiser Aviation'}
+                ✈️ {userType === 'admin' || userType === 'super_admin' || userType === 'base_manager' ? 'Cruiser Admin' : 'Cruiser Aviation'}
               </h1>
             )}
             <button
@@ -250,7 +282,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
           </header>
 
           {/* Page Content */}
-          <main className="p-6">
+          <main className="flex-1 overflow-hidden">
             {children}
           </main>
         </div>

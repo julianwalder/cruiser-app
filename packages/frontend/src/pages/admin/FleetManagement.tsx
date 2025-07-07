@@ -3,12 +3,12 @@ import { Plus, Eye, Edit, Trash2, Upload, Plane } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 interface FleetManagementProps {
-  userRole?: 'admin' | 'user' | 'super_admin' | 'base_manager';
+  userRole?: 'admin' | 'user' | 'super_admin' | 'base_manager' | 'instructor';
 }
 
 const FleetManagement: React.FC<FleetManagementProps> = ({ userRole = 'user' }) => {
   // Determine if user has admin privileges for fleet management
-  const isAdmin = userRole === 'admin' || userRole === 'super_admin' || userRole === 'base_manager';
+  const isAdmin = userRole === 'admin' || userRole === 'super_admin' || userRole === 'base_manager' || userRole === 'instructor';
   
   const [fleet, setFleet] = useState<any[]>([]);
   const [bases, setBases] = useState<any[]>([]);

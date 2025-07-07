@@ -6,14 +6,14 @@ import toast from 'react-hot-toast';
 const API_URL = '';
 
 interface ServiceManagementProps {
-  userRole?: 'admin' | 'user' | 'super_admin' | 'base_manager';
+  userRole?: 'admin' | 'user' | 'super_admin' | 'base_manager' | 'instructor';
 }
 
 const ServiceManagement: React.FC<ServiceManagementProps> = ({ userRole = 'user' }) => {
   console.log('ServiceManagement component rendering with role:', userRole);
   
   // Determine if user has admin privileges for service management
-  const isAdmin = userRole === 'admin' || userRole === 'super_admin' || userRole === 'base_manager';
+  const isAdmin = userRole === 'admin' || userRole === 'super_admin' || userRole === 'base_manager' || userRole === 'instructor';
   
   const [showServiceModal, setShowServiceModal] = useState(false);
   const [showViewServiceModal, setShowViewServiceModal] = useState(false);

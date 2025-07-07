@@ -34,6 +34,6 @@
       "@assets/*": ["./src/assets/*"]
     }
   },
-  "include": ["src"],
+  "include": ["src", "worker-types.d.ts"],
   "references": [{ "path": "./tsconfig.node.json" }]
 } 

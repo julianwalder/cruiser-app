@@ -2,6 +2,21 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 
+export enum UserRole {
+  SUPERADMIN = 'superadmin',
+  ADMIN = 'admin',
+  BASEMANAGER = 'basemanager',
+  INSTRUCTOR = 'instructor',
+  USER = 'user',
+}
+
+export enum UserStatus {
+  PENDING = 'pending',
+  ACTIVE = 'active',
+  SUSPENDED = 'suspended',
+  VERIFIED = 'verified',
+}
+
 @Injectable()
 export class AuthService {
   private magicLinkTokens = new Map<string, { email: string; expiresAt: Date }>();
@@ -51,9 +66,10 @@ export class AuthService {
     // Create a JWT token for the user
     const payload = { 
       email: tokenData.email, 
-      sub: tokenData.email,
+      sub: user.id,
       type: 'magic_link',
-      role: user.role
+      role: user.role,
+      userId: user.id
     };
 
     const jwtToken = this.jwtService.sign(payload);
@@ -75,16 +91,15 @@ export class AuthService {
   }
 
   async validateUser(email: string): Promise<any> {
-    // In a real app, validate against database
-    // For now, return a mock user
-    if (email === 'superadmin@cruiser.com') {
-      return {
+    // Mock user database - in production, this would query your actual database
+    const mockUsers = {
+      'superadmin@cruiser.com': {
         id: '1',
         email: email,
         firstName: 'Super',
         lastName: 'Admin',
-        role: 'super_admin',
-        status: 'active',
+        role: UserRole.SUPERADMIN,
+        status: UserStatus.ACTIVE,
         isFullyVerified: true,
         hasPPL: true,
         creditedHours: 1000,
@@ -92,23 +107,118 @@ export class AuthService {
         firebaseUid: 'super-admin-firebase-uid',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
+        permissions: ['*'] // Superadmin has all permissions
+      },
+      'admin@cruiser.com': {
+        id: '2',
+        email: email,
+        firstName: 'Admin',
+        lastName: 'User',
+        role: UserRole.ADMIN,
+        status: UserStatus.ACTIVE,
+        isFullyVerified: true,
+        hasPPL: true,
+        creditedHours: 800,
+        totalFlightHours: 1200,
+        firebaseUid: 'admin-firebase-uid',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        permissions: ['users:read', 'users:write', 'bases:read', 'bases:write', 'aircraft:read', 'aircraft:write', 'services:read', 'services:write']
+      },
+      'basemanager@cruiser.com': {
+        id: '3',
+        email: email,
+        firstName: 'Base',
+        lastName: 'Manager',
+        role: UserRole.BASEMANAGER,
+        status: UserStatus.ACTIVE,
+        isFullyVerified: true,
+        hasPPL: true,
+        creditedHours: 600,
+        totalFlightHours: 900,
+        firebaseUid: 'basemanager-firebase-uid',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        permissions: ['users:read', 'bases:read', 'aircraft:read', 'aircraft:write', 'services:read']
+      },
+      'instructor@cruiser.com': {
+        id: '4',
+        email: email,
+        firstName: 'Flight',
+        lastName: 'Instructor',
+        role: UserRole.INSTRUCTOR,
+        status: UserStatus.ACTIVE,
+        isFullyVerified: true,
+        hasPPL: true,
+        creditedHours: 400,
+        totalFlightHours: 600,
+        firebaseUid: 'instructor-firebase-uid',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        permissions: ['users:read', 'aircraft:read', 'services:read']
+      },
+      'user@cruiser.com': {
+        id: '5',
+        email: email,
+        firstName: 'Regular',
+        lastName: 'User',
+        role: UserRole.USER,
+        status: UserStatus.ACTIVE,
+        isFullyVerified: true,
+        hasPPL: false,
+        creditedHours: 0,
+        totalFlightHours: 0,
+        firebaseUid: 'user-firebase-uid',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        permissions: ['services:read']
+      }
+    };
+
+    const user = mockUsers[email];
+    if (!user) {
+      // Create a new user with default role
+      return {
+        id: Date.now().toString(),
+        email: email,
+        firstName: 'New',
+        lastName: 'User',
+        role: UserRole.USER,
+        status: UserStatus.PENDING,
+        isFullyVerified: false,
+        hasPPL: false,
+        creditedHours: 0,
+        totalFlightHours: 0,
+        firebaseUid: null,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        permissions: ['services:read']
       };
     }
     
-    return {
-      id: '1',
-      email: email,
-      firstName: 'John',
-      lastName: 'Doe',
-      role: 'student_pilot',
-      status: 'active',
-      isFullyVerified: true,
-      hasPPL: false,
-      creditedHours: 0,
-      totalFlightHours: 0,
-      firebaseUid: 'mock-firebase-uid',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
+    return user;
+  }
+
+  async validateToken(token: string): Promise<any> {
+    try {
+      const payload = this.jwtService.verify(token);
+      const user = await this.validateUser(payload.email);
+      return { ...payload, user };
+    } catch (error) {
+      throw new UnauthorizedException('Invalid token');
+    }
+  }
+
+  hasPermission(user: any, permission: string): boolean {
+    if (user.role === UserRole.SUPERADMIN) {
+      return true; // Superadmin has all permissions
+    }
+    
+    return user.permissions && user.permissions.includes(permission);
+  }
+
+  canAccessResource(user: any, resourceType: string, action: string): boolean {
+    const permission = `${resourceType}:${action}`;
+    return this.hasPermission(user, permission);
   }
 } 

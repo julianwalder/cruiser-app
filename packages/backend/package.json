@@ -10,6 +10,7 @@
     "format": "prettier --write \"src/**/*.ts\"",
     "lint": "eslint \"src/**/*.ts\" --fix",
     "test": "jest",
+    "start:dev": "npx wrangler dev --config ../../wrangler-api.toml --env staging --port 8787",
     "db:migrate": "npx wrangler d1 execute cruiser-db-staging --file=./src/migrations/001_initial_schema.sql",
     "db:migrate:prod": "npx wrangler d1 execute cruiser-db-production --file=./src/migrations/001_initial_schema.sql"
   },

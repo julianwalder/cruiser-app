@@ -9,7 +9,7 @@
   ],
   "scripts": {
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
-    "dev:backend": "cd packages/backend && npm run start:dev",
+    "dev:backend": "npx wrangler dev --config wrangler-api.toml --env staging --port 8787",
     "dev:frontend": "cd packages/frontend && npm run dev",
     "dev:local": "concurrently \"cd packages/frontend && npm run dev:simple\" \"cd packages/frontend && npm run api:dev\"",
     "dev:worker": "npx wrangler dev --env local --port 8788",

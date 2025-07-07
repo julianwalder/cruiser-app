@@ -6,14 +6,14 @@ import toast from 'react-hot-toast';
 const API_URL = '';
 
 interface BaseManagementProps {
-  userRole?: 'admin' | 'user' | 'super_admin' | 'base_manager';
+  userRole?: 'admin' | 'user' | 'super_admin' | 'base_manager' | 'instructor';
 }
 
 const BaseManagement: React.FC<BaseManagementProps> = ({ userRole = 'user' }) => {
   console.log('BaseManagement component rendering with role:', userRole);
   
   // Determine if user has admin privileges for base management
-  const isAdmin = userRole === 'admin' || userRole === 'super_admin' || userRole === 'base_manager';
+  const isAdmin = userRole === 'admin' || userRole === 'super_admin' || userRole === 'base_manager' || userRole === 'instructor';
   
   const [showBaseModal, setShowBaseModal] = useState(false);
   const [showViewBaseModal, setShowViewBaseModal] = useState(false);
@@ -42,7 +42,8 @@ const BaseManagement: React.FC<BaseManagementProps> = ({ userRole = 'user' }) =>
     email: '',
     website: '',
     imageUrl: '',
-    isActive: true
+    isActive: true,
+    isFeatured: false
   });
 
   // Bases data from API
@@ -153,7 +154,8 @@ const BaseManagement: React.FC<BaseManagementProps> = ({ userRole = 'user' }) =>
       email: '',
       website: '',
       imageUrl: '',
-      isActive: true
+      isActive: true,
+      isFeatured: false
     });
   };
 
@@ -169,6 +171,7 @@ const BaseManagement: React.FC<BaseManagementProps> = ({ userRole = 'user' }) =>
           ...baseFormData,
           latitude: baseFormData.latitude ? parseFloat(baseFormData.latitude) : null,
           longitude: baseFormData.longitude ? parseFloat(baseFormData.longitude) : null,
+          isFeatured: baseFormData.isFeatured
         }),
       });
 
@@ -203,6 +206,7 @@ const BaseManagement: React.FC<BaseManagementProps> = ({ userRole = 'user' }) =>
           ...baseFormData,
           latitude: baseFormData.latitude ? parseFloat(baseFormData.latitude) : null,
           longitude: baseFormData.longitude ? parseFloat(baseFormData.longitude) : null,
+          isFeatured: baseFormData.isFeatured
         }),
       });
 
@@ -253,7 +257,8 @@ const BaseManagement: React.FC<BaseManagementProps> = ({ userRole = 'user' }) =>
       email: base.email || '',
       website: base.website || '',
       imageUrl: base.imageUrl || '',
-      isActive: base.isActive !== undefined ? base.isActive : true
+      isActive: base.isActive !== undefined ? base.isActive : true,
+      isFeatured: base.isFeatured !== undefined ? base.isFeatured : false
     });
     setIsEditMode(true);
     setShowBaseModal(true);
@@ -294,7 +299,7 @@ const BaseManagement: React.FC<BaseManagementProps> = ({ userRole = 'user' }) =>
       <div className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-20">
         <div className="flex items-center justify-between px-6 py-4">
           <h2 className="text-2xl font-bold text-gray-900">
-            {isAdmin ? 'Base Management' : 'Available Bases'}
+            {isAdmin ? 'Airfields Management' : 'Available Airfields'}
           </h2>
           {isAdmin && (
             <button
@@ -331,6 +336,9 @@ const BaseManagement: React.FC<BaseManagementProps> = ({ userRole = 'user' }) =>
                 <span className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${base.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                   {base.isActive ? 'ACTIVE' : 'INACTIVE'}
                 </span>
+                {base.isFeatured && (
+                  <span className="inline-block px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800 ml-2">Featured</span>
+                )}
               </div>
             </div>
             
@@ -642,6 +650,18 @@ const BaseManagement: React.FC<BaseManagementProps> = ({ userRole = 'user' }) =>
                         className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                       />
                       <span className="ml-2 text-sm text-gray-700">Active Base</span>
+                    </label>
+                  </div>
+
+                  <div>
+                    <label className="flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={baseFormData.isFeatured}
+                        onChange={e => handleBaseFormChange('isFeatured', e.target.checked)}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <span className="ml-2 text-sm text-gray-700">Featured Base</span>
                     </label>
                   </div>
                 </div>

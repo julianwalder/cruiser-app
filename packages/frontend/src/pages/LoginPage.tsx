@@ -1,7 +1,39 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useAuth } from '../store/auth';
+import { useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 
-export const LoginPage: React.FC = () => {
+export default function LoginPage() {
+  const { user, loading } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // If user is already authenticated, redirect to dashboard
+    if (user && !loading) {
+      navigate('/dashboard');
+    }
+  }, [user, loading, navigate]);
+
+  const handleCloudflareLogin = () => {
+    // Cloudflare Access handles authentication automatically
+    // This will redirect to Cloudflare Access login if not authenticated
+    window.location.href = '/';
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="max-w-md w-full space-y-8">
+          <div className="text-center">
+            <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
+              Loading...
+            </h2>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
       <Helmet>
@@ -12,63 +44,47 @@ export const LoginPage: React.FC = () => {
         <div className="max-w-md w-full space-y-8">
           <div>
             <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-              Welcome to Cruiser Aviation
+              Sign in to your account
             </h2>
             <p className="mt-2 text-center text-sm text-gray-600">
-              Authentication is handled by Cloudflare Access
+              Access your Cruiser Aviation dashboard
             </p>
           </div>
           
-          <div className="bg-white shadow rounded-lg p-6">
-            <div className="text-center">
-              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100">
-                <svg className="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                </svg>
+          <div className="mt-8 space-y-6">
+            <div className="rounded-md shadow-sm -space-y-px">
+              <div className="text-center">
+                <p className="text-sm text-gray-600 mb-4">
+                  This application uses Cloudflare Access for secure authentication.
+                </p>
+                <button
+                  onClick={handleCloudflareLogin}
+                  className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  Continue with Cloudflare Access
+                </button>
               </div>
-              <h3 className="mt-4 text-lg font-medium text-gray-900">
-                Secure Authentication
-              </h3>
-              <p className="mt-2 text-sm text-gray-500">
-                This application uses Cloudflare Access for secure authentication. 
-                If you can see this page, you should be automatically authenticated 
-                when accessing the main application.
+            </div>
+
+            <div className="text-center">
+              <p className="text-xs text-gray-500">
+                By continuing, you agree to our terms of service and privacy policy.
               </p>
             </div>
-            
-            <div className="mt-6">
-              <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
-                <div className="flex">
-                  <div className="flex-shrink-0">
-                    <svg className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                  <div className="ml-3">
-                    <h3 className="text-sm font-medium text-blue-800">
-                      How it works
-                    </h3>
-                    <div className="mt-2 text-sm text-blue-700">
-                      <ul className="list-disc list-inside space-y-1">
-                        <li>Cloudflare Access handles authentication</li>
-                        <li>No passwords or magic links needed</li>
-                        <li>Secure single sign-on (SSO)</li>
-                        <li>Automatic session management</li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div className="mt-6">
-              <a
-                href="/dashboard"
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                Continue to Dashboard
-              </a>
-            </div>
+          </div>
+
+          {/* Role Information */}
+          <div className="mt-8 bg-blue-50 border border-blue-200 rounded-md p-4">
+            <h3 className="text-sm font-medium text-blue-800 mb-2">
+              Available Roles
+            </h3>
+            <ul className="text-sm text-blue-700 space-y-1">
+              <li><strong>User:</strong> Basic access to flight information</li>
+              <li><strong>Instructor:</strong> Manage students and lessons</li>
+              <li><strong>Base Manager:</strong> Manage bases and operations</li>
+              <li><strong>Admin:</strong> Full system administration</li>
+              <li><strong>Super Admin:</strong> Complete system control</li>
+            </ul>
           </div>
 
           <div className="text-center">
@@ -83,4 +99,4 @@ export const LoginPage: React.FC = () => {
       </div>
     </>
   );
-}; 
+} 

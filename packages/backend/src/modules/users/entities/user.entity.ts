@@ -11,11 +11,11 @@ import {
 import { Exclude } from 'class-transformer';
 
 export enum UserRole {
-  STUDENT_PILOT = 'student_pilot',
-  PPL_PILOT = 'ppl_pilot',
-  FLIGHT_INSTRUCTOR = 'flight_instructor',
-  BASE_MANAGER = 'base_manager',
-  SUPER_ADMIN = 'super_admin',
+  USER = 'user',
+  INSTRUCTOR = 'instructor',
+  BASEMANAGER = 'basemanager',
+  ADMIN = 'admin',
+  SUPERADMIN = 'superadmin',
 }
 
 export enum UserStatus {
@@ -75,7 +75,7 @@ export class User {
   @Column({
     type: 'enum',
     enum: UserRole,
-    default: UserRole.STUDENT_PILOT,
+    default: UserRole.USER,
   })
   role: UserRole;
 
