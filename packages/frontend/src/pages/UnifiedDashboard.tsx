@@ -8,6 +8,7 @@ import BaseManagement from './admin/BaseManagement';
 import FleetManagement from './admin/FleetManagement';
 import RoleManagement from './admin/RoleManagement';
 import ServiceManagement from './admin/ServiceManagement';
+import AirfieldManagement from './admin/AirfieldManagement';
 
 // User-specific components
 import { FlightLogPage } from './FlightLogPage';
@@ -87,6 +88,8 @@ export const UnifiedDashboard: React.FC<UnifiedDashboardProps> = ({
         return <RoleManagement />;
       case 'services':
         return <ServiceManagement userRole={effectiveRole} />;
+      case 'airfields':
+        return <AirfieldManagement userRole={effectiveRole} />;
       case 'flights':
         return (
           <div className="bg-white shadow rounded-lg p-6">

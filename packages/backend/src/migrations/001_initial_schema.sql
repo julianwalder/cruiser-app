@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS bases (
   location TEXT NOT NULL,
   description TEXT,
   image_url TEXT,
+  is_active BOOLEAN DEFAULT 1,
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );
@@ -40,7 +41,13 @@ CREATE TABLE IF NOT EXISTS services (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
   description TEXT,
+  type TEXT DEFAULT 'flight_school' CHECK (type IN ('flight_school', 'aircraft_rental', 'instruction', 'exam_preparation', 'theoretical_course')),
   base_id TEXT NOT NULL,
+  base_price REAL DEFAULT 0,
+  duration TEXT,
+  default_payment_plan TEXT DEFAULT 'full_price' CHECK (default_payment_plan IN ('full_price', 'two_installments', 'full_payment')),
+  is_active BOOLEAN DEFAULT 1,
+  image_url TEXT,
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL,
   FOREIGN KEY (base_id) REFERENCES bases(id) ON DELETE CASCADE
@@ -74,14 +81,14 @@ CREATE INDEX IF NOT EXISTS idx_flights_pilot_id ON flights(pilot_id);
 CREATE INDEX IF NOT EXISTS idx_flights_departure_time ON flights(departure_time);
 
 -- Insert sample data
-INSERT OR IGNORE INTO bases (id, name, location, description, created_at, updated_at) VALUES
-('base-1', 'Main Base', 'London Heathrow', 'Primary operational base', '2024-01-01T00:00:00Z', '2024-01-01T00:00:00Z'),
-('base-2', 'Secondary Base', 'Manchester Airport', 'Secondary operational base', '2024-01-01T00:00:00Z', '2024-01-01T00:00:00Z');
+INSERT OR IGNORE INTO bases (id, name, location, description, is_active, created_at, updated_at) VALUES
+('base-1', 'Main Base', 'London Heathrow', 'Primary operational base', 1, '2024-01-01T00:00:00Z', '2024-01-01T00:00:00Z'),
+('base-2', 'Secondary Base', 'Manchester Airport', 'Secondary operational base', 1, '2024-01-01T00:00:00Z', '2024-01-01T00:00:00Z');
 
-INSERT OR IGNORE INTO services (id, name, description, base_id, created_at, updated_at) VALUES
-('service-1', 'Aircraft Maintenance', 'Full aircraft maintenance services', 'base-1', '2024-01-01T00:00:00Z', '2024-01-01T00:00:00Z'),
-('service-2', 'Flight Training', 'Pilot training and certification', 'base-1', '2024-01-01T00:00:00Z', '2024-01-01T00:00:00Z'),
-('service-3', 'Charter Services', 'Private charter flights', 'base-2', '2024-01-01T00:00:00Z', '2024-01-01T00:00:00Z');
+INSERT OR IGNORE INTO services (id, name, description, type, base_id, base_price, duration, default_payment_plan, is_active, created_at, updated_at) VALUES
+('service-1', 'Aircraft Maintenance', 'Full aircraft maintenance services', 'instruction', 'base-1', 150.00, '2 hours', 'full_price', 1, '2024-01-01T00:00:00Z', '2024-01-01T00:00:00Z'),
+('service-2', 'Flight Training', 'Pilot training and certification', 'flight_school', 'base-1', 250.00, '1 hour', 'two_installments', 1, '2024-01-01T00:00:00Z', '2024-01-01T00:00:00Z'),
+('service-3', 'Charter Services', 'Private charter flights', 'aircraft_rental', 'base-2', 500.00, '4 hours', 'full_payment', 1, '2024-01-01T00:00:00Z', '2024-01-01T00:00:00Z');
 
 INSERT OR IGNORE INTO aircraft (id, registration, type, base_id, created_at, updated_at) VALUES
 ('aircraft-1', 'G-ABCD', 'Cessna 172', 'base-1', '2024-01-01T00:00:00Z', '2024-01-01T00:00:00Z'),

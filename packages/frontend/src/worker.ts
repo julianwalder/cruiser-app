@@ -38,6 +38,12 @@ export default {
     console.log(`[${new Date().toISOString()}] ${request.method} ${url.pathname}`);
     console.log('Environment:', environment);
 
+    // In local development, let the Vite dev server handle API requests
+    if (environment === 'local') {
+      console.log('Local development mode - letting Vite handle API requests');
+      return fetch(request);
+    }
+
     // Initialize Cloudflare Access authentication service
     const authService = createCloudflareAuthService(env);
 

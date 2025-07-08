@@ -138,7 +138,8 @@ const defaultRoleCapabilities: Record<UserRole, RoleConfig> = {
       { feature: 'Manage Fleet', accessible: true, description: 'Full fleet management' },
       { feature: 'Manage Services', accessible: true, description: 'Full service management' },
       { feature: 'Manage Roles', accessible: true, description: 'Full role and permission management' },
-      { feature: 'View Reports', accessible: true, description: 'Full reporting and analytics access' }
+      { feature: 'View Reports', accessible: true, description: 'Full reporting and analytics access' },
+      { feature: 'Manage Airfields', accessible: true, description: 'Import and manage operational airfields' }
     ]
   }
 };
@@ -153,6 +154,7 @@ const menuItemPermissions: Record<string, string[]> = {
   users: ['users:read'],
   roles: ['roles:read'],
   reports: ['reports:read'],
+  airfields: ['airfields:read', 'airfields:write'],
   flightlog: ['flightlog:read'],
   invoices: ['invoices:read'],
   payments: ['payments:read'],
@@ -289,6 +291,9 @@ export const useRoleTesting = () => {
           case 'View Reports':
             permissions.push('reports:read');
             break;
+          case 'Manage Airfields':
+            permissions.push('airfields:read', 'airfields:write');
+            break;
           default:
             // Add generic permission for unknown features
             const featureKey = capability.feature.toLowerCase().replace(/\s+/g, '_');
@@ -323,6 +328,7 @@ export const useRoleTesting = () => {
   const getAccessibleSections = (): string[] => {
     const baseSections = ['dashboard', 'flights', 'fleet', 'bases', 'services'];
     const adminSections = ['users', 'roles', 'reports'];
+    const superadminSections = ['airfields'];
     const userSpecificSections = ['flightlog', 'invoices', 'payments'];
     const commonSections = ['profile', 'settings'];
     
@@ -331,6 +337,11 @@ export const useRoleTesting = () => {
     // Add admin sections based on current capabilities
     if (hasPermission('users:read') || hasPermission('bases:write') || hasPermission('fleet:write')) {
       accessibleSections = [...accessibleSections, ...adminSections];
+    }
+    
+    // Add superadmin sections (airfields management)
+    if (hasPermission('airfields:read') || currentRole === 'super_admin') {
+      accessibleSections = [...accessibleSections, ...superadminSections];
     }
     
     // Add user-specific sections for users with invoice permissions or admin roles
@@ -346,6 +357,7 @@ export const useRoleTesting = () => {
     console.log('🔍 Role Testing Debug:', {
       currentRole,
       hasInvoicePermission: hasPermission('invoices:read'),
+      hasAirfieldsPermission: hasPermission('airfields:read'),
       rolePermissions: getRolePermissions(currentRole),
       accessibleSections,
       userSpecificSections
@@ -371,6 +383,11 @@ export const useRoleTesting = () => {
       accessibleItems.push('flightlog');
     }
     
+    // Special handling for airfields - check if user has airfield management capabilities
+    if (hasPermission('airfields:read') && !accessibleItems.includes('airfields')) {
+      accessibleItems.push('airfields');
+    }
+    
     // Always include dashboard and profile
     if (!accessibleItems.includes('dashboard')) {
       accessibleItems.unshift('dashboard');
@@ -385,6 +402,7 @@ export const useRoleTesting = () => {
       allMenuItems,
       accessibleItems,
       hasFlightLogPermission: hasPermission('flightlog:read'),
+      hasAirfieldsPermission: hasPermission('airfields:read'),
       roleCapabilities: roleCapabilities[currentRole]
     });
     

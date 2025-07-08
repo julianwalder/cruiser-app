@@ -285,7 +285,7 @@ const ServiceManagement: React.FC<ServiceManagementProps> = ({ userRole = 'user'
       </div>
 
       {/* Scrollable Content */}
-      <div className="flex-1 overflow-auto py-6 px-0">
+      <div className="flex-1 overflow-auto py-6 px-6">
         {/* Loading State */}
         {loading && (
           <div className="flex items-center justify-center py-12">

@@ -47,7 +47,8 @@
     "dev:api": "cd packages/backend && npm run start:dev",
     "build:api": "cd packages/backend && npm run build",
     "test:api": "cd packages/backend && npm run test",
-    "lint:api": "cd packages/backend && npm run lint"
+    "lint:api": "cd packages/backend && npm run lint",
+    "clean-dev": "pkill -f 'wrangler dev' || true && pkill -f 'vite' || true && pkill -f 'npm run dev' || true && pkill -f 'concurrently' || true"
   },
   "devDependencies": {
     "concurrently": "^8.2.2",

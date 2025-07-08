@@ -5,6 +5,11 @@ import path from 'path';
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
+  define: {
+    // Set environment variables for development
+    'process.env.VITE_ENVIRONMENT': '"local"',
+    'process.env.VITE_API_URL': '"http://localhost:8787"',
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
@@ -26,6 +31,17 @@ export default defineConfig({
         target: 'http://localhost:8787',
         changeOrigin: true,
         secure: false,
+        configure: (proxy, options) => {
+          proxy.on('proxyReq', (proxyReq, req, res) => {
+            // Set Origin header for development mode detection
+            proxyReq.setHeader('Origin', 'http://localhost:3001');
+            
+            // Preserve Content-Type header for multipart form data
+            if (req.headers['content-type'] && req.headers['content-type'].includes('multipart/form-data')) {
+              proxyReq.setHeader('Content-Type', req.headers['content-type']);
+            }
+          });
+        },
       },
     },
   },

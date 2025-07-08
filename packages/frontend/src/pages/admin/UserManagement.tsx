@@ -80,13 +80,14 @@ const UserManagement: React.FC = () => {
     creditedHours: 0
   });
 
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+  // Use relative URLs for API requests - the worker will proxy them
+  const API_URL = '';
 
   // Fetch users from API
   const fetchUsers = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch('/api/admin/users');
+      const response = await fetch(`${API_URL}/api/admin/users`);
       if (response.ok) {
         const data = await response.json();
         setUsers(data as any[]);
@@ -115,23 +116,43 @@ const UserManagement: React.FC = () => {
 
   const handleImageUpload = async (file: File) => {
     try {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        alert('Please select a valid image file.');
+        return;
+      }
+
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('Image file size must be less than 5MB.');
+        return;
+      }
+
       const formData = new FormData();
       formData.append('image', file);
       
-      const response = await fetch('/api/admin/users/upload-image', {
+      console.log('Uploading user image:', file.name, 'Size:', file.size);
+      
+      const response = await fetch(`${API_URL}/api/admin/users/upload-image`, {
         method: 'POST',
         body: formData,
       });
 
+      console.log('Upload response status:', response.status);
+
       if (response.ok) {
         const data = await response.json();
+        console.log('Upload success:', data);
         handleUserFormChange('imageUrl', (data as any).url);
-        alert('Image uploaded successfully!');
+        alert('User image uploaded successfully!');
       } else {
-        alert('Failed to upload image. Please try again.');
+        const errorData = await response.text();
+        console.error('Upload failed:', errorData);
+        alert(`Failed to upload user image: ${response.status} ${response.statusText}`);
       }
     } catch (error) {
-      alert('Error uploading image. Please try again.');
+      console.error('Upload error:', error);
+      alert('Error uploading user image. Please check your connection and try again.');
     }
   };
 
@@ -139,7 +160,7 @@ const UserManagement: React.FC = () => {
   const handleCreateUser = async () => {
     setIsSubmitting(true);
     try {
-      const response = await fetch('/api/admin/users', {
+      const response = await fetch(`${API_URL}/api/admin/users`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -247,7 +268,7 @@ const UserManagement: React.FC = () => {
     
     setUpdatingUser(true);
     try {
-      const response = await fetch(`/api/admin/users/${selectedUser.id}`, {
+      const response = await fetch(`${API_URL}/api/admin/users/${selectedUser.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -316,7 +337,7 @@ const UserManagement: React.FC = () => {
     }
 
     try {
-      const response = await fetch(`/api/admin/users/${user.id}`, {
+      const response = await fetch(`${API_URL}/api/admin/users/${user.id}`, {
         method: 'DELETE',
       });
 

@@ -20,7 +20,8 @@ import {
   Users,
   Crown,
   Building2,
-  TrendingUp
+  TrendingUp,
+  Globe
 } from 'lucide-react';
 import { useRoleTesting } from '../hooks/useRoleTesting';
 
@@ -40,7 +41,8 @@ const Icons = {
   Users: Users,
   Roles: Crown,
   Fleet: Plane,
-  Reports: TrendingUp
+  Reports: TrendingUp,
+  Globe: Globe
 };
 
 type MenuItem = {
@@ -82,6 +84,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
     users: { id: 'users', label: 'Users', icon: Icons.Users },
     roles: { id: 'roles', label: 'Roles', icon: Icons.Roles },
     reports: { id: 'reports', label: 'Reports', icon: Icons.Reports },
+    airfields: { id: 'airfields', label: 'Airfields', icon: Icons.Globe },
     flightlog: { id: 'flightlog', label: 'Flight Log', icon: Icons.FlightLog },
     invoices: { id: 'invoices', label: 'Invoices', icon: Icons.Invoices },
     payments: { id: 'payments', label: 'Payments', icon: Icons.Payments },
