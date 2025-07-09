@@ -73,9 +73,9 @@ fi
 
 # Step 3: Create KV namespace if it doesn't exist
 echo -e "${BLUE}🔑 Step 3: Setting up KV namespace...${NC}"
-if ! npx wrangler kv:namespace list | grep -q "$STAGING_KV_NAMESPACE_NAME"; then
+if ! npx wrangler kv namespace list | grep -q "$STAGING_KV_NAMESPACE_NAME"; then
     echo "Creating KV namespace: $STAGING_KV_NAMESPACE_NAME"
-    npx wrangler kv:namespace create "$STAGING_KV_NAMESPACE_NAME"
+    npx wrangler kv namespace create "$STAGING_KV_NAMESPACE_NAME"
     echo -e "${GREEN}✅ KV namespace created${NC}"
 else
     echo -e "${YELLOW}⚠️  KV namespace already exists, skipping creation${NC}"
