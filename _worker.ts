@@ -446,7 +446,13 @@ app.post('/api/superadmin/continents-countries/populate', authMiddleware, supera
 app.get('*', async (c) => {
   const url = new URL(c.req.url);
   
-  // Check if this is a request for a static asset (has file extension)
+  // In development mode, redirect to frontend dev server
+  if (isDevelopment(c)) {
+    const frontendUrl = `http://localhost:3000${url.pathname}${url.search}`;
+    return Response.redirect(frontendUrl, 302);
+  }
+  
+  // In production, use Workers Sites
   const hasFileExtension = /\.[a-zA-Z0-9]+$/.test(url.pathname);
   
   if (hasFileExtension) {
