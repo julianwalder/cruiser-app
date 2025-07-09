@@ -179,13 +179,13 @@ id = "b9b4a8aa1da64f3696c4778e03642cb8"
 
 [env.staging.vars]
 JWT_SECRET = "your-jwt-secret-here"
-CLOUDFLARE_ACCESS_AUD = "https://ca-staging.ca-staging.workers.dev"
-VITE_API_URL = "https://ca-staging.ca-staging.workers.dev"
+CLOUDFLARE_ACCESS_AUD = "https://ca-staging.julian-pad.workers.dev"
+VITE_API_URL = "https://ca-staging.julian-pad.workers.dev"
 VITE_APP_NAME = "Cruiser Aviation (Staging)"
 VITE_APP_VERSION = "1.0.0"
 VITE_ENVIRONMENT = "staging"
 VITE_DEBUG = "true"
-VITE_CLOUDFLARE_ACCESS_AUD = "https://ca-staging.ca-staging.workers.dev"
+VITE_CLOUDFLARE_ACCESS_AUD = "https://ca-staging.julian-pad.workers.dev"
 VITE_CLOUDFLARE_ACCESS_TEAM_DOMAIN = ""
 
 [env.staging.observability.logs]

@@ -48,7 +48,7 @@ jobs:
         sleep 30
         
         echo "Testing staging deployment..."
-        STAGING_URL="https://ca-staging.ca-staging.workers.dev/health"
+        STAGING_URL="https://ca-staging.julian-pad.workers.dev/health"
         RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" "$STAGING_URL" || echo "000")
         
         if [ "$RESPONSE" = "200" ]; then

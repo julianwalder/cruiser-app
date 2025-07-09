@@ -87,4 +87,4 @@ echo "Deploying to environment: staging"
 npx wrangler deploy --env staging
 
 echo -e "${GREEN}✅ Staging deployment completed successfully!${NC}"
-echo -e "${BLUE}🌐 Staging URL: https://$STAGING_WORKER_NAME.$STAGING_WORKER_NAME.workers.dev${NC}" 
+echo -e "${BLUE}🌐 Staging URL: https://$STAGING_WORKER_NAME.julian-pad.workers.dev${NC}" 
