@@ -3,11 +3,6 @@ name = "cruiser-aviation-app"
 main = "packages/frontend/src/worker.ts"
 compatibility_date = "2025-07-09"
 
-# Custom domain configuration
-[[routes]]
-pattern = "app.cruiseraviation.com/*"
-zone_name = "cruiseraviation.com"
-
 # Workers Sites will handle static assets automatically
 
 # Workers Sites configuration
