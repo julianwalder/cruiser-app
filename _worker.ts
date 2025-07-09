@@ -51,8 +51,8 @@ app.get('/health', (c) => {
   return c.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// Root endpoint
-app.get('/', (c) => {
+// API root endpoint (only for /api/ routes)
+app.get('/api', (c) => {
   return c.json({ message: 'Cruiser Aviation API', version: '1.0.0' });
 });
 
