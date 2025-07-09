@@ -27,11 +27,6 @@ jobs:
           cd packages/frontend
           npm run build
           
-      - name: Generate KV data
-        run: |
-          cd packages/frontend
-          node scripts/upload-kv.js
-          
       - name: Upload KV data to production
         run: |
           npx wrangler kv bulk put --binding=STATIC_CONTENT --env production packages/frontend/kv-data.json
