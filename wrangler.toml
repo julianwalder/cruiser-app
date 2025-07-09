@@ -112,7 +112,7 @@ VITE_CLOUDFLARE_ACCESS_TEAM_DOMAIN = ""
 # Production environment (default)
 [env.production]
 name = "ca-prod"
-main = "_worker.js"
+main = "_worker.ts"
 compatibility_date = "2025-07-09"
 
 # Workers Sites configuration for production
@@ -161,7 +161,7 @@ crons = []
 # Staging environment
 [env.staging]
 name = "ca-staging"
-main = "_worker.js"
+main = "_worker.ts"
 compatibility_date = "2025-07-09"
 
 # Workers Sites configuration for staging
