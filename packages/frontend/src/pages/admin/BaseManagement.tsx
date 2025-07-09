@@ -36,9 +36,12 @@ interface DesignatedAirfield {
 
 const BaseManagement: React.FC<BaseManagementProps> = ({ userRole = 'user' }) => {
   console.log('BaseManagement component rendering with role:', userRole);
-  
-  // Determine if user has admin privileges for base management
+
+  // Check if user has admin privileges
   const isAdmin = userRole === 'admin' || userRole === 'super_admin' || userRole === 'base_manager' || userRole === 'instructor';
+  
+  // Check if user can remove bases (only super_admin and admin)
+  const canRemoveBases = userRole === 'super_admin' || userRole === 'admin';
   
   const [showBaseModal, setShowBaseModal] = useState(false);
   const [showViewBaseModal, setShowViewBaseModal] = useState(false);
@@ -47,7 +50,6 @@ const BaseManagement: React.FC<BaseManagementProps> = ({ userRole = 'user' }) =>
   const [isEditMode, setIsEditMode] = useState(false);
 
   const [baseFormData, setBaseFormData] = useState({
-    baseName: '',
     baseDescription: '',
     baseManager: '',
     baseNotes: ''
@@ -90,7 +92,6 @@ const BaseManagement: React.FC<BaseManagementProps> = ({ userRole = 'user' }) =>
 
   const resetForm = () => {
     setBaseFormData({
-      baseName: '',
       baseDescription: '',
       baseManager: '',
       baseNotes: ''
@@ -111,7 +112,6 @@ const BaseManagement: React.FC<BaseManagementProps> = ({ userRole = 'user' }) =>
           airfieldId: selectedBase.id,
           airfieldName: selectedBase.name,
           isBase: true,
-          baseName: baseFormData.baseName,
           baseDescription: baseFormData.baseDescription,
           baseManager: baseFormData.baseManager,
           baseNotes: baseFormData.baseNotes
@@ -143,7 +143,6 @@ const BaseManagement: React.FC<BaseManagementProps> = ({ userRole = 'user' }) =>
   const handleEditBase = (airfield: DesignatedAirfield) => {
     setSelectedBase(airfield);
     setBaseFormData({
-      baseName: airfield.base_name || airfield.name,
       baseDescription: airfield.base_description || '',
       baseManager: airfield.base_manager || '',
       baseNotes: airfield.base_notes || ''
@@ -299,12 +298,12 @@ const BaseManagement: React.FC<BaseManagementProps> = ({ userRole = 'user' }) =>
                       <span className="inline-block px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800 capitalize">
                         {airfield.type}
                       </span>
-                    </div>
-                  </div>
-                  
-                  {/* Content Section */}
-                  <div className="p-4 flex flex-col flex-1">
-                    <div className="flex-1">
+              </div>
+            </div>
+            
+            {/* Content Section */}
+            <div className="p-4 flex flex-col flex-1">
+              <div className="flex-1">
                       <h3 className="font-semibold text-gray-900 text-lg mb-1">
                         {airfield.base_name || airfield.name}
                       </h3>
@@ -326,40 +325,42 @@ const BaseManagement: React.FC<BaseManagementProps> = ({ userRole = 'user' }) =>
                         <p className="text-sm text-gray-600 mt-3 line-clamp-2">
                           {airfield.base_description}
                         </p>
-                      )}
-                    </div>
-                    
-                    {/* Action Links */}
-                    <div className="border-t border-gray-200 pt-3 mt-4">
-                      <div className="flex space-x-3 text-sm">
-                        <button
+                )}
+              </div>
+              
+              {/* Action Links */}
+              <div className="border-t border-gray-200 pt-3 mt-4">
+                <div className="flex space-x-3 text-sm">
+                  <button
                           onClick={() => handleViewBase(airfield)}
-                          className="text-blue-600 hover:text-blue-800 font-medium"
-                        >
-                          View Details
-                        </button>
-                        {isAdmin && (
-                          <>
-                            <button
+                    className="text-blue-600 hover:text-blue-800 font-medium"
+                  >
+                    View Details
+                  </button>
+                  {isAdmin && (
+                    <>
+                      <button
                               onClick={() => handleEditBase(airfield)}
-                              className="text-gray-600 hover:text-gray-800 font-medium"
-                            >
-                              Edit
-                            </button>
-                            <button
+                        className="text-gray-600 hover:text-gray-800 font-medium"
+                      >
+                        Edit
+                      </button>
+                      {canRemoveBases && (
+                        <button
                               onClick={() => handleRemoveBaseDesignation(airfield)}
-                              className="text-red-600 hover:text-red-800 font-medium"
-                            >
+                        className="text-red-600 hover:text-red-800 font-medium"
+                      >
                               Remove Base
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </div>
+                      </button>
+                      )}
+                    </>
+                  )}
                 </div>
-              ))}
+              </div>
             </div>
+          </div>
+        ))}
+        </div>
           </>
         )}
       </div>
@@ -392,47 +393,36 @@ const BaseManagement: React.FC<BaseManagementProps> = ({ userRole = 'user' }) =>
 
             {/* Scrollable Content */}
             <div className="flex-1 overflow-y-auto p-6">
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Base Name</label>
-                  <input
-                    type="text"
-                    value={baseFormData.baseName}
-                    onChange={e => handleBaseFormChange('baseName', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Enter base name..."
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                  <textarea
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                    <textarea
                     value={baseFormData.baseDescription}
                     onChange={e => handleBaseFormChange('baseDescription', e.target.value)}
-                    rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Description of the base..."
-                  />
-                </div>
+                      rows={3}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Description of the base..."
+                    />
+                  </div>
 
-                <div>
+                  <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Base Manager</label>
-                  <input
-                    type="text"
+                    <input
+                      type="text"
                     value={baseFormData.baseManager}
                     onChange={e => handleBaseFormChange('baseManager', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="Base manager name..."
                   />
                 </div>
 
-                <div>
+                    <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
                   <textarea
                     value={baseFormData.baseNotes}
                     onChange={e => handleBaseFormChange('baseNotes', e.target.value)}
                     rows={2}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="Additional notes..."
                   />
                 </div>
@@ -466,7 +456,7 @@ const BaseManagement: React.FC<BaseManagementProps> = ({ userRole = 'user' }) =>
                 <div>
                   <h4 className="font-medium text-gray-900 mb-3">Airfield Information</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
+                  <div>
                       <label className="block text-sm font-medium text-gray-700">Name</label>
                       <p className="text-sm text-gray-900">{selectedBase.name}</p>
                     </div>
@@ -532,10 +522,10 @@ const BaseManagement: React.FC<BaseManagementProps> = ({ userRole = 'user' }) =>
                       </div>
                     )}
                     {selectedBase.base_notes && (
-                      <div>
+                  <div>
                         <label className="block text-sm font-medium text-gray-700">Notes</label>
                         <p className="text-sm text-gray-900">{selectedBase.base_notes}</p>
-                      </div>
+                    </div>
                     )}
                   </div>
                 </div>

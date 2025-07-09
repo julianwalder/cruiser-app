@@ -114,7 +114,6 @@ const AirfieldManagement: React.FC<AirfieldManagementProps> = ({ userRole = 'use
 
   // Form data for edit modal
   const [editFormData, setEditFormData] = useState({
-    baseName: '',
     baseDescription: '',
     baseManager: '',
     baseNotes: '',
@@ -268,7 +267,6 @@ const AirfieldManagement: React.FC<AirfieldManagementProps> = ({ userRole = 'use
           airfieldId: airfield.id,
           airfieldName: airfield.name,
           isBase: isBase,
-          baseName: isBase ? airfield.name : undefined,
           baseDescription: '',
           baseManager: '',
           baseNotes: ''
@@ -332,7 +330,6 @@ const AirfieldManagement: React.FC<AirfieldManagementProps> = ({ userRole = 'use
   const handleEditAirfield = (airfield: ImportedAirfield) => {
     setSelectedAirfield(airfield);
     setEditFormData({
-      baseName: airfield.base_name || '',
       baseDescription: airfield.base_description || '',
       baseManager: airfield.base_manager || '',
       baseNotes: airfield.base_notes || '',
@@ -363,7 +360,6 @@ const AirfieldManagement: React.FC<AirfieldManagementProps> = ({ userRole = 'use
         setShowEditAirfieldModal(false);
         setSelectedAirfield(null);
         setEditFormData({
-          baseName: '',
           baseDescription: '',
           baseManager: '',
           baseNotes: '',
@@ -942,11 +938,6 @@ const AirfieldManagement: React.FC<AirfieldManagementProps> = ({ userRole = 'use
                                       {Boolean(selectedAirfield.is_base) && (
                     <>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Base Name</label>
-                        <p className="text-sm text-gray-900">{selectedAirfield.base_name || 'N/A'}</p>
-                      </div>
-
-                      <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
                         <p className="text-sm text-gray-900">{selectedAirfield.base_description || 'N/A'}</p>
                       </div>
@@ -1065,17 +1056,6 @@ const AirfieldManagement: React.FC<AirfieldManagementProps> = ({ userRole = 'use
 
                   {editFormData.isBase && (
                     <>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Base Name</label>
-                        <input
-                          type="text"
-                          value={editFormData.baseName}
-                          onChange={(e) => handleEditFormChange('baseName', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          placeholder="Enter base name"
-                        />
-                      </div>
-
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
                         <textarea

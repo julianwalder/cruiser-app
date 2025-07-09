@@ -1111,7 +1111,7 @@ app.post('/api/superadmin/bases', superadminMiddleware, async (c) => {
       WHERE airfield_id = ? AND is_active = 1
     `).bind(data.airfieldId).first();
     
-    const baseName = data.baseName?.trim() || data.airfieldName || 'Company Base';
+    const baseName = data.airfieldName || 'Company Base';
     
     if (existingBase) {
       // Update existing base designation
@@ -1163,10 +1163,10 @@ app.put('/api/superadmin/bases/:id', superadminMiddleware, async (c) => {
   const now = new Date().toISOString();
   
   await c.env.DB.prepare(`
-    UPDATE base_designations SET base_name = ?, description = ?, base_manager = ?, notes = ?, is_active = ?, updated_at = ?
+    UPDATE base_designations SET description = ?, base_manager = ?, notes = ?, is_active = ?, updated_at = ?
     WHERE id = ?
   `).bind(
-    data.baseName, data.description, data.baseManager, data.notes, data.isActive ? 1 : 0, now, id
+    data.description, data.baseManager, data.notes, data.isActive ? 1 : 0, now, id
   ).run();
   
   return c.json({ id, ...data, updated_at: now });
