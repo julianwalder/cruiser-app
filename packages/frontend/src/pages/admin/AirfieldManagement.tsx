@@ -9,6 +9,19 @@ interface AirfieldManagementProps {
   userRole?: 'admin' | 'user' | 'super_admin' | 'base_manager' | 'instructor';
 }
 
+interface Continent {
+  code: string;
+  name: string;
+}
+
+interface Country {
+  code: string;
+  name: string;
+  continent_code: string;
+  wikipedia_link?: string;
+  keywords?: string;
+}
+
 interface OperationalArea {
   id: string;
   type: 'continent' | 'country';
@@ -71,7 +84,8 @@ const AirfieldManagement: React.FC<AirfieldManagementProps> = ({ userRole = 'use
   }
 
   // State management
-  const [operationalAreas, setOperationalAreas] = useState<OperationalArea[]>([]);
+  const [continents, setContinents] = useState<Continent[]>([]);
+  const [countries, setCountries] = useState<Country[]>([]);
   const [selectedContinents, setSelectedContinents] = useState<string[]>([]);
   const [selectedCountries, setSelectedCountries] = useState<string[]>([]);
   const [airfields, setAirfields] = useState<ImportedAirfield[]>([]);
@@ -124,12 +138,35 @@ const AirfieldManagement: React.FC<AirfieldManagementProps> = ({ userRole = 'use
   const fetchOperationalAreas = async () => {
     try {
       setLoadingAreas(true);
-      const response = await fetch(`${API_URL}/api/superadmin/operational-areas`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch operational areas');
+      
+      // First, populate continents and countries if they don't exist
+      const populateResponse = await fetch(`${API_URL}/api/superadmin/continents-countries/populate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+      
+      if (!populateResponse.ok) {
+        throw new Error('Failed to populate continents and countries');
       }
-      const data = await response.json() as OperationalArea[];
-      setOperationalAreas(data);
+      
+      // Fetch continents
+      const continentsResponse = await fetch(`${API_URL}/api/superadmin/continents`);
+      if (!continentsResponse.ok) {
+        throw new Error('Failed to fetch continents');
+      }
+      const continentsData = await continentsResponse.json() as Continent[];
+      setContinents(continentsData);
+      
+      // Fetch countries
+      const countriesResponse = await fetch(`${API_URL}/api/superadmin/countries`);
+      if (!countriesResponse.ok) {
+        throw new Error('Failed to fetch countries');
+      }
+      const countriesData = await countriesResponse.json() as Country[];
+      setCountries(countriesData);
+      
     } catch (error) {
       console.error('Error fetching operational areas:', error);
       toast.error('Failed to load operational areas');
@@ -209,18 +246,8 @@ const AirfieldManagement: React.FC<AirfieldManagementProps> = ({ userRole = 'use
 
     setImporting(true);
     try {
-      // Convert country IDs to country codes from hierarchical structure
-      const countryCodes = selectedCountries.map(countryId => {
-        for (const continent of operationalAreas) {
-          if (continent.countries && Array.isArray(continent.countries)) {
-            const country = continent.countries.find(c => c.id === countryId);
-            if (country) {
-              return country.code;
-            }
-          }
-        }
-        return null;
-      }).filter(Boolean);
+      // Convert country IDs to country codes - selectedCountries now contains country codes directly
+      const countryCodes = selectedCountries.filter(Boolean);
 
       // Always import all airports
       const types: string[] = ['airport', 'small_airport', 'medium_airport', 'large_airport'];
@@ -306,14 +333,13 @@ const AirfieldManagement: React.FC<AirfieldManagementProps> = ({ userRole = 'use
   // Get countries for selected continents
   const getCountriesForSelectedContinents = () => {
     // The API returns hierarchical structure with countries nested under continents
-    const allCountries: OperationalArea[] = [];
+    const allCountries: Country[] = [];
     
-    operationalAreas.forEach(area => {
-      if (area.type === 'continent' && selectedContinents.includes(area.id)) {
+    continents.forEach(continent => {
+      if (selectedContinents.includes(continent.code)) {
         // Add countries from this continent
-        if (area.countries && Array.isArray(area.countries)) {
-          allCountries.push(...area.countries);
-        }
+        const continentCountries = countries.filter(country => country.continent_code === continent.code);
+        allCountries.push(...continentCountries);
       }
     });
     
@@ -723,25 +749,23 @@ const AirfieldManagement: React.FC<AirfieldManagementProps> = ({ userRole = 'use
                       <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
                       <span className="ml-2 text-sm text-gray-600">Loading continents...</span>
                     </div>
-                  ) : operationalAreas.filter(area => area.type === 'continent').length === 0 ? (
+                  ) : continents.length === 0 ? (
                     <div className="text-center py-4 text-sm text-gray-500">
                       No continents available. Please check your connection.
                     </div>
                   ) : (
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                      {operationalAreas
-                        .filter(area => area.type === 'continent')
-                        .map(continent => (
-                          <label key={continent.id} className="flex items-center">
-                            <input
-                              type="checkbox"
-                              checked={selectedContinents.includes(continent.id)}
-                              onChange={() => handleContinentToggle(continent.id)}
-                              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                            />
-                            <span className="ml-2 text-sm text-gray-700">{continent.name}</span>
-                          </label>
-                        ))}
+                      {continents.map(continent => (
+                        <label key={continent.code} className="flex items-center">
+                          <input
+                            type="checkbox"
+                            checked={selectedContinents.includes(continent.code)}
+                            onChange={() => handleContinentToggle(continent.code)}
+                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          />
+                          <span className="ml-2 text-sm text-gray-700">{continent.name}</span>
+                        </label>
+                      ))}
                     </div>
                   )}
                 </div>
@@ -756,24 +780,24 @@ const AirfieldManagement: React.FC<AirfieldManagementProps> = ({ userRole = 'use
                       <div className="text-center py-4 text-sm text-gray-500 border border-gray-200 rounded-md bg-gray-50">
                         <p className="font-medium">No countries found for selected continents.</p>
                         <p className="text-xs mt-1 text-gray-400">
-                          Selected: {operationalAreas
-                            .filter(area => area.type === 'continent' && selectedContinents.includes(area.id))
-                            .map(area => area.name)
+                          Selected: {continents
+                            .filter(continent => selectedContinents.includes(continent.code))
+                            .map(continent => continent.name)
                             .join(', ')}
                         </p>
                         <p className="text-xs mt-1 text-gray-400">
-                          Total continents: {operationalAreas.filter(area => area.type === 'continent').length} | 
-                          Total countries: {operationalAreas.reduce((sum, area) => sum + (area.countries?.length || 0), 0)}
+                          Total continents: {continents.length} | 
+                          Total countries: {countries.length}
                         </p>
                       </div>
                     ) : (
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-40 overflow-y-auto border border-gray-200 rounded-md p-2">
                         {getCountriesForSelectedContinents().map(country => (
-                          <label key={country.id} className="flex items-center hover:bg-gray-50 p-1 rounded">
+                          <label key={country.code} className="flex items-center hover:bg-gray-50 p-1 rounded">
                             <input
                               type="checkbox"
-                              checked={selectedCountries.includes(country.id)}
-                              onChange={() => handleCountryToggle(country.id)}
+                              checked={selectedCountries.includes(country.code)}
+                              onChange={() => handleCountryToggle(country.code)}
                               className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                             />
                             <span className="ml-2 text-sm text-gray-700">{country.name}</span>

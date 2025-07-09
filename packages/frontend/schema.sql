@@ -106,6 +106,73 @@ CREATE TABLE IF NOT EXISTS invoices (
     FOREIGN KEY (flight_id) REFERENCES flights(id)
 );
 
+-- Import Jobs table (for tracking airfield import operations)
+CREATE TABLE IF NOT EXISTS import_jobs (
+    id TEXT PRIMARY KEY,
+    job_type TEXT NOT NULL,
+    status TEXT CHECK(status IN ('running', 'completed', 'failed')) DEFAULT 'running',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Imported Airfields table (for storing OurAirports data)
+CREATE TABLE IF NOT EXISTS imported_airfields (
+    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(4)) || '-' || hex(randomblob(2)) || '-4' || substr(hex(randomblob(2)),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(hex(randomblob(2)),2) || '-' || hex(randomblob(6)))), -- UUID by default
+    our_airports_id INTEGER,
+    name TEXT NOT NULL,
+    icao_code TEXT,
+    iata_code TEXT,
+    type TEXT CHECK(type IN ('airport', 'heliport', 'seaplane_base', 'closed')),
+    latitude REAL,
+    longitude REAL,
+    elevation_ft INTEGER,
+    continent TEXT,
+    country_code TEXT,
+    country_name TEXT,
+    region_code TEXT,
+    region_name TEXT,
+    municipality TEXT,
+    scheduled_service BOOLEAN DEFAULT FALSE,
+    gps_code TEXT,
+    local_code TEXT,
+    home_link TEXT,
+    wikipedia_link TEXT,
+    keywords TEXT,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Base Designations table (for designating airfields as company bases)
+CREATE TABLE IF NOT EXISTS base_designations (
+    id TEXT PRIMARY KEY,
+    airfield_id TEXT NOT NULL,
+    base_name TEXT NOT NULL,
+    description TEXT,
+    base_manager TEXT,
+    notes TEXT,
+    image_url TEXT,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (airfield_id) REFERENCES imported_airfields(id)
+);
+
+-- Continents table
+CREATE TABLE IF NOT EXISTS continents (
+    code TEXT PRIMARY KEY, -- e.g., 'AF', 'EU', etc.
+    name TEXT NOT NULL
+);
+
+-- Countries table
+CREATE TABLE IF NOT EXISTS countries (
+    code TEXT PRIMARY KEY, -- e.g., 'US', 'DE', etc.
+    name TEXT NOT NULL,
+    continent_code TEXT NOT NULL REFERENCES continents(code),
+    wikipedia_link TEXT,
+    keywords TEXT
+);
+
 -- Create indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
@@ -131,4 +198,18 @@ CREATE INDEX IF NOT EXISTS idx_flights_status ON flights(status);
 
 CREATE INDEX IF NOT EXISTS idx_invoices_user_id ON invoices(user_id);
 CREATE INDEX IF NOT EXISTS idx_invoices_status ON invoices(status);
-CREATE INDEX IF NOT EXISTS idx_invoices_due_date ON invoices(due_date); 
+CREATE INDEX IF NOT EXISTS idx_invoices_due_date ON invoices(due_date);
+
+-- Indexes for new tables
+CREATE INDEX IF NOT EXISTS idx_import_jobs_type ON import_jobs(job_type);
+CREATE INDEX IF NOT EXISTS idx_import_jobs_status ON import_jobs(status);
+CREATE INDEX IF NOT EXISTS idx_import_jobs_created_at ON import_jobs(created_at);
+
+CREATE INDEX IF NOT EXISTS idx_imported_airfields_country ON imported_airfields(country_code);
+CREATE INDEX IF NOT EXISTS idx_imported_airfields_type ON imported_airfields(type);
+CREATE INDEX IF NOT EXISTS idx_imported_airfields_icao ON imported_airfields(icao_code);
+CREATE INDEX IF NOT EXISTS idx_imported_airfields_iata ON imported_airfields(iata_code);
+CREATE INDEX IF NOT EXISTS idx_imported_airfields_active ON imported_airfields(is_active);
+
+CREATE INDEX IF NOT EXISTS idx_base_designations_airfield ON base_designations(airfield_id);
+CREATE INDEX IF NOT EXISTS idx_base_designations_active ON base_designations(is_active); 

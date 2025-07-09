@@ -1,7 +1,7 @@
 # Root-level wrangler.toml for Cloudflare Workers deployment
 name = "cruiser-aviation-app"
 main = "packages/frontend/src/worker.ts"
-compatibility_date = "2025-07-05"
+compatibility_date = "2025-07-09"
 
 # Custom domain configuration
 [[routes]]
@@ -28,7 +28,7 @@ VITE_CLOUDFLARE_ACCESS_TEAM_DOMAIN = "cruiseraviation.com"
 [env.api]
 name = "cruiser-aviation-api"
 main = "packages/backend/src/worker-api.ts"
-compatibility_date = "2025-07-05"
+compatibility_date = "2025-07-09"
 
 [[env.api.d1_databases]]
 binding = "DB"
@@ -46,12 +46,19 @@ id = "f10d38b010894c3a8e75c77d2b0ae6a9"
 [env.api.vars]
 JWT_SECRET = "your-jwt-secret-here"
 CLOUDFLARE_ACCESS_AUD = "https://app.cruiseraviation.com"
+VITE_API_URL = "https://api.cruiseraviation.com"
+VITE_APP_NAME = "Cruiser Aviation"
+VITE_APP_VERSION = "1.0.0"
+VITE_ENVIRONMENT = "production"
+VITE_DEBUG = "false"
+VITE_CLOUDFLARE_ACCESS_AUD = "https://app.cruiseraviation.com"
+VITE_CLOUDFLARE_ACCESS_TEAM_DOMAIN = "cruiseraviation.com"
 
 # API Staging Environment
 [env.api-staging]
 name = "cruiser-aviation-api-staging"
 main = "packages/backend/src/worker-api.ts"
-compatibility_date = "2025-07-05"
+compatibility_date = "2025-07-09"
 
 [[env.api-staging.d1_databases]]
 binding = "DB"
@@ -69,12 +76,49 @@ id = "b9b4a8aa1da64f3696c4778e03642cb8"
 [env.api-staging.vars]
 JWT_SECRET = "your-jwt-secret-here"
 CLOUDFLARE_ACCESS_AUD = "https://staging.cruiseraviation.com"
+VITE_API_URL = "https://staging-api.cruiseraviation.com"
+VITE_APP_NAME = "Cruiser Aviation (Staging)"
+VITE_APP_VERSION = "1.0.0"
+VITE_ENVIRONMENT = "staging"
+VITE_DEBUG = "true"
+VITE_CLOUDFLARE_ACCESS_AUD = "https://staging.cruiseraviation.com"
+VITE_CLOUDFLARE_ACCESS_TEAM_DOMAIN = "cruiseraviation.com"
+
+# API Local Environment
+[env.api-local]
+name = "cruiser-aviation-api-local"
+main = "packages/backend/src/worker-api.ts"
+compatibility_date = "2025-07-09"
+
+[[env.api-local.d1_databases]]
+binding = "DB"
+database_name = "cruiser-db-local"
+database_id = "988fe651-9f5d-4cb5-9749-e601285f46ae"
+
+[[env.api-local.r2_buckets]]
+binding = "STORAGE"
+bucket_name = "cruiser-storage-local"
+
+[[env.api-local.kv_namespaces]]
+binding = "CACHE"
+id = "local"
+
+[env.api-local.vars]
+JWT_SECRET = "your-jwt-secret-here"
+CLOUDFLARE_ACCESS_AUD = "http://localhost:3000"
+VITE_API_URL = "http://localhost:8787"
+VITE_APP_NAME = "Cruiser Aviation (Local)"
+VITE_APP_VERSION = "1.0.0"
+VITE_ENVIRONMENT = "local"
+VITE_DEBUG = "true"
+VITE_CLOUDFLARE_ACCESS_AUD = "http://localhost:3000"
+VITE_CLOUDFLARE_ACCESS_TEAM_DOMAIN = ""
 
 # Production environment (default)
 [env.production]
 name = "cruiser-aviation-app"
 main = "packages/frontend/src/worker.ts"
-compatibility_date = "2025-07-05"
+compatibility_date = "2025-07-09"
 
 # Custom domain configuration for production
 [[env.production.routes]]
@@ -117,7 +161,7 @@ crons = []
 [env.staging]
 name = "cruiser-aviation-frontend-staging"
 main = "packages/frontend/src/worker.ts"
-compatibility_date = "2025-07-05"
+compatibility_date = "2025-07-09"
 
 # Workers Sites configuration for staging
 [env.staging.site]
@@ -155,7 +199,7 @@ crons = []
 [env.local]
 name = "cruiser-aviation-frontend-local"
 main = "packages/frontend/src/worker.ts"
-compatibility_date = "2025-07-05"
+compatibility_date = "2025-07-09"
 
 # Workers Sites configuration for local
 [env.local.site]

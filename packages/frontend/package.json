@@ -12,21 +12,11 @@
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage",
-    "deploy:staging": "./scripts/deploy-staging.sh",
-    "deploy:production": "./scripts/deploy-production.sh",
-    "deploy:dev": "cd ../.. && wrangler deploy",
+    "deploy:staging": "cd ../.. && wrangler deploy --env staging",
+    "deploy:production": "cd ../.. && wrangler deploy --env production",
     "worker:dev": "cd ../.. && wrangler dev --env local",
     "worker:build": "cd ../.. && wrangler build",
-    "worker:deploy": "cd ../.. && wrangler deploy",
-    "dev:simple": "vite --port 3000",
-    "api:dev": "node scripts/dev-api.js",
-    "dev:setup": "node scripts/dev-setup.js",
-    "setup:cloudflare-vars": "./scripts/setup-cloudflare-vars.sh",
-    "dev:api:watch": "nodemon --watch scripts/dev-api.js scripts/dev-api.js",
-    "dev:all": "concurrently \"npm run api:dev\" \"npm run dev:simple\"",
-    "dev:complete": "./scripts/dev-all.sh",
-    "dev:full": "./scripts/dev-all.sh",
-    "dev:local": "concurrently \"npm run api:dev\" \"npm run dev:simple\""
+    "worker:deploy": "cd ../.. && wrangler deploy"
   },
   "dependencies": {
     "@cloudflare/kv-asset-handler": "^0.3.0",
@@ -46,7 +36,6 @@
     "lodash": "^4.17.21",
     "lucide-react": "^0.294.0",
     "moment": "^2.29.4",
-    "multer": "^1.4.5-lts.2",
     "qrcode": "^1.5.3",
     "react": "^18.2.0",
     "react-confetti": "^6.1.0",
@@ -88,19 +77,14 @@
     "@vitest/coverage-v8": "^1.0.0",
     "@vitest/ui": "^1.0.0",
     "autoprefixer": "^10.4.16",
-    "concurrently": "^8.2.2",
-    "cors": "^2.8.5",
     "eslint": "^8.53.0",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.4",
-    "express": "^4.21.2",
-    "nodemon": "^3.1.10",
     "postcss": "^8.4.31",
     "tailwindcss": "^3.3.5",
     "terser": "^5.24.0",
     "typescript": "^5.2.2",
     "vite": "^5.0.0",
-    "vitest": "^1.0.0",
-    "wrangler": "^4.23.0"
+    "vitest": "^1.0.0"
   }
 }

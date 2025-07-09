@@ -37,7 +37,7 @@ interface DesignatedAirfield {
 
 const BaseManagement: React.FC<BaseManagementProps> = ({ userRole = 'user' }) => {
   console.log('BaseManagement component rendering with role:', userRole);
-
+  
   // Check if user has admin privileges
   const isAdmin = userRole === 'admin' || userRole === 'super_admin' || userRole === 'base_manager' || userRole === 'instructor';
   
@@ -279,26 +279,26 @@ const BaseManagement: React.FC<BaseManagementProps> = ({ userRole = 'user' }) =>
               </div>
             </div>
 
-            {/* Bases Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* Bases Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {designatedAirfields.map((airfield) => (
                 <div key={airfield.id} className="bg-white rounded-lg shadow-md overflow-hidden flex flex-col min-h-[400px]">
-                  {/* Image Section - 16:9 Aspect Ratio */}
-                  <div className="relative w-full" style={{ aspectRatio: '16/9' }}>
+            {/* Image Section - 16:9 Aspect Ratio */}
+            <div className="relative w-full" style={{ aspectRatio: '16/9' }}>
                     {airfield.base_image_url ? (
-                      <img 
+                <img 
                         src={airfield.base_image_url} 
                         alt={`${airfield.name} base`}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
+                  className="w-full h-full object-cover"
+                />
+              ) : (
                       <div className="w-full h-full bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
                         <div className="text-center">
                           <MapPin className="w-12 h-12 text-blue-500 mx-auto mb-2" />
                           <p className="text-sm text-blue-600 font-medium">Airfield Base</p>
                         </div>
-                      </div>
-                    )}
+                </div>
+              )}
                     {/* Base Badge Overlay */}
                     <div className="absolute top-3 left-3">
                       <span className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
@@ -307,10 +307,10 @@ const BaseManagement: React.FC<BaseManagementProps> = ({ userRole = 'user' }) =>
                       </span>
                     </div>
                     {/* Type Badge Overlay */}
-                    <div className="absolute top-3 right-3">
+              <div className="absolute top-3 right-3">
                       <span className="inline-block px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800 capitalize">
                         {airfield.type}
-                      </span>
+                </span>
               </div>
             </div>
             
@@ -359,7 +359,7 @@ const BaseManagement: React.FC<BaseManagementProps> = ({ userRole = 'user' }) =>
                         Edit
                       </button>
                       {canRemoveBases && (
-                        <button
+                      <button
                               onClick={() => handleRemoveBaseDesignation(airfield)}
                         className="text-red-600 hover:text-red-800 font-medium"
                       >
@@ -426,8 +426,8 @@ const BaseManagement: React.FC<BaseManagementProps> = ({ userRole = 'user' }) =>
                     onChange={e => handleBaseFormChange('baseManager', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="Base manager name..."
-                  />
-                </div>
+                    />
+                  </div>
 
                     <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
@@ -437,19 +437,19 @@ const BaseManagement: React.FC<BaseManagementProps> = ({ userRole = 'user' }) =>
                     rows={2}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="Additional notes..."
-                  />
-                </div>
+                      />
+                  </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Base Image</label>
-                  <div className="space-y-2">
-                    {baseFormData.imageUrl && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Base Image</label>
+                    <div className="space-y-2">
+                      {baseFormData.imageUrl && (
                       <div className="relative">
-                        <img 
+                          <img 
                           src={baseFormData.imageUrl} 
-                          alt="Base preview" 
+                            alt="Base preview" 
                           className="w-full h-32 object-cover rounded-md border border-gray-300"
-                        />
+                          />
                         <button
                           type="button"
                           onClick={() => handleBaseFormChange('imageUrl', '')}
@@ -457,8 +457,8 @@ const BaseManagement: React.FC<BaseManagementProps> = ({ userRole = 'user' }) =>
                         >
                           ×
                         </button>
-                      </div>
-                    )}
+                        </div>
+                      )}
                     <input
                       type="file"
                       accept="image/*"

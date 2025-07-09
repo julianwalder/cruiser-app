@@ -7,6 +7,11 @@ import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
 import { SignJWT } from 'jose';
 
+// Cloudflare Workers types
+type D1Database = any;
+type R2Bucket = any;
+type KVNamespace = any;
+
 // Types
 interface Env {
   DB: D1Database;
@@ -125,7 +130,10 @@ const adminMiddleware = async (c: any, next: any) => {
 
 // File upload helper
 async function uploadFile(file: File, env: Env, folder: string): Promise<string> {
-  const key = `${folder}/${Date.now()}-${file.name}`;
+  // In development mode, store files with local-storage prefix for local serving
+  const isDev = true; // Always true for local development
+  const key = isDev ? `local-storage/${folder}/${Date.now()}-${file.name}` : `${folder}/${Date.now()}-${file.name}`;
+  
   await env.STORAGE.put(key, file.stream(), {
     httpMetadata: {
       contentType: file.type,
@@ -167,6 +175,44 @@ app.get('/api/auth/profile', async (c) => {
     });
   } catch (error) {
     return c.json({ error: 'Invalid token' }, 401);
+  }
+});
+
+// Serve local files in development mode (must be before global auth middleware)
+app.get('/api/local-files/:folder/:filename', async (c) => {
+  if (!isDevelopment(c)) {
+    return c.json({ error: 'Not available in production' }, 404);
+  }
+  try {
+    // In Cloudflare Workers, we can't use Node.js fs module
+    // Instead, we'll serve files from R2 bucket with a local prefix
+    const folder = c.req.param('folder');
+    const filename = c.req.param('filename');
+    
+    // For development, we'll serve files from R2 bucket with a local prefix
+    const fileKey = `local-storage/${folder}/${filename}`;
+    
+    try {
+      const object = await c.env.STORAGE.get(fileKey);
+      if (!object) {
+        return c.json({ error: 'File not found' }, 404);
+      }
+      
+      const contentType = getContentType(filename);
+      return new Response(object.body, {
+        headers: {
+          'Content-Type': contentType,
+          'Cache-Control': 'no-cache',
+          'Content-Disposition': `inline; filename="${filename}"`
+        }
+      });
+    } catch (storageError) {
+      console.error('Error accessing storage:', storageError);
+      return c.json({ error: 'File not found' }, 404);
+    }
+  } catch (error) {
+    console.error('Error serving local file:', error);
+    return c.json({ error: 'Internal server error' }, 500);
   }
 });
 
@@ -352,23 +398,49 @@ async function handleImageUpload(c: any, folder: string, fieldName: string = 'im
     const extension = file.name.split('.').pop() || 'jpg';
     const filename = `${folder}/${timestamp}-${randomId}.${extension}`;
 
-    // Upload to R2
-    await c.env.STORAGE.put(filename, await file.arrayBuffer(), {
-      httpMetadata: {
-        contentType: file.type,
-      },
-    });
+    if (isDevelopment(c)) {
+      // In development mode, store in R2 with local prefix
+      try {
+        const localFilename = `local-storage/${folder}/${filename}`;
+        await c.env.STORAGE.put(localFilename, await file.arrayBuffer(), {
+          httpMetadata: {
+            contentType: file.type,
+          },
+        });
 
-    // Return the file URL
-    const fileUrl = `https://cruiser-storage-staging.r2.cloudflarestorage.com/${filename}`;
-    
-    return c.json({ 
-      success: true,
-      url: fileUrl,
-      filename: filename,
-      size: file.size,
-      type: file.type
-    });
+        // Return local URL
+        const localUrl = `http://localhost:8787/api/local-files/${folder}/${filename}`;
+        
+        return c.json({ 
+          success: true,
+          url: localUrl,
+          filename: filename,
+          size: file.size,
+          type: file.type
+        });
+      } catch (localError) {
+        console.error('Local storage error:', localError);
+        return c.json({ error: 'Failed to save file locally' }, 500);
+      }
+    } else {
+      // In production, upload to R2
+      await c.env.STORAGE.put(filename, await file.arrayBuffer(), {
+        httpMetadata: {
+          contentType: file.type,
+        },
+      });
+
+      // Return the file URL
+      const fileUrl = `https://cruiser-storage-staging.r2.cloudflarestorage.com/${filename}`;
+      
+      return c.json({ 
+        success: true,
+        url: fileUrl,
+        filename: filename,
+        size: file.size,
+        type: file.type
+      });
+    }
 
   } catch (error) {
     console.error('Upload error:', error);
@@ -397,6 +469,26 @@ app.post('/api/admin/services/upload-image', adminMiddleware, async (c) => {
 app.post('/api/admin/users/upload-image', adminMiddleware, async (c) => {
   return handleImageUpload(c, 'users', 'image');
 });
+
+// Helper function to determine content type
+function getContentType(filename: string): string {
+  const ext = filename.split('.').pop()?.toLowerCase();
+  const mimeTypes: { [key: string]: string } = {
+    'jpg': 'image/jpeg',
+    'jpeg': 'image/jpeg',
+    'png': 'image/png',
+    'gif': 'image/gif',
+    'webp': 'image/webp',
+    'svg': 'image/svg+xml',
+    'pdf': 'application/pdf',
+    'txt': 'text/plain',
+    'html': 'text/html',
+    'css': 'text/css',
+    'js': 'application/javascript',
+    'json': 'application/json'
+  };
+  return mimeTypes[ext || ''] || 'application/octet-stream';
+}
 
 app.get('/api/admin/services', adminMiddleware, async (c) => {
   const services = await c.env.DB.prepare(`
@@ -649,6 +741,69 @@ app.post('/api/superadmin/bases/upload-image', superadminMiddleware, async (c) =
   return handleImageUpload(c, 'base-designations', 'image');
 });
 
+// Base designation management endpoint
+app.post('/api/superadmin/bases', superadminMiddleware, async (c) => {
+  try {
+    const data = await c.req.json();
+    const { airfieldId, airfieldName, isBase, baseDescription, baseManager, baseNotes, imageUrl } = data;
+    
+    console.log('🔍 Base designation request:', { airfieldId, airfieldName, isBase, baseDescription, baseManager, baseNotes, imageUrl });
+    
+    if (!airfieldId) {
+      return c.json({ error: 'Airfield ID is required' }, 400);
+    }
+    
+    const now = new Date().toISOString();
+    
+    if (isBase) {
+      // Create or update base designation
+      const baseId = crypto.randomUUID();
+      
+      // Check if base designation already exists
+      const existingBase = await c.env.DB.prepare(`
+        SELECT id FROM base_designations WHERE airfield_id = ?
+      `).bind(airfieldId).first();
+      
+      if (existingBase) {
+        // Update existing base designation, including image_url
+        await c.env.DB.prepare(`
+          UPDATE base_designations 
+          SET base_name = ?, description = ?, base_manager = ?, notes = ?, image_url = ?, updated_at = ?
+          WHERE airfield_id = ?
+        `).bind(airfieldName, baseDescription || '', baseManager || '', baseNotes || '', imageUrl || null, now, airfieldId).run();
+        
+        console.log('✅ Updated existing base designation for airfield:', airfieldId);
+      } else {
+        // Create new base designation, including image_url
+        await c.env.DB.prepare(`
+          INSERT INTO base_designations (id, airfield_id, base_name, description, base_manager, notes, image_url, is_active, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
+        `).bind(baseId, airfieldId, airfieldName, baseDescription || '', baseManager || '', baseNotes || '', imageUrl || null, now, now).run();
+        
+        console.log('✅ Created new base designation for airfield:', airfieldId);
+      }
+    } else {
+      // Remove base designation
+      await c.env.DB.prepare(`
+        DELETE FROM base_designations WHERE airfield_id = ?
+      `).bind(airfieldId).run();
+      
+      console.log('✅ Removed base designation for airfield:', airfieldId);
+    }
+    
+    return c.json({ 
+      success: true, 
+      message: `Base designation ${isBase ? 'created/updated' : 'removed'} successfully`,
+      airfieldId,
+      isBase
+    });
+    
+  } catch (error) {
+    console.error('Error managing base designation:', error);
+    return c.json({ error: 'Failed to manage base designation' }, 500);
+  }
+});
+
 // Operational Areas endpoints
 app.get('/api/superadmin/operational-areas', superadminMiddleware, async (c) => {
   const areas = await c.env.DB.prepare(`
@@ -690,59 +845,64 @@ app.get('/api/superadmin/airfields', superadminMiddleware, async (c) => {
   
   console.log('🔍 Airfields GET request params:', { search, country, type, isBase, is_base, baseFilter });
   
-  let query = `
-    SELECT ia.*, 
-           CASE WHEN bd.id IS NOT NULL THEN 1 ELSE 0 END as is_base,
-           bd.base_name,
-           bd.description as base_description,
-           bd.base_manager,
-           bd.notes as base_notes,
-           bd.image_url as base_image_url
-    FROM imported_airfields ia
-    LEFT JOIN base_designations bd ON ia.id = bd.airfield_id AND bd.is_active = 1
-    WHERE ia.is_active = 1
-  `;
-  
-  const params: any[] = [];
-  
-  if (search) {
-    query += ` AND (ia.name LIKE ? OR ia.icao_code LIKE ? OR ia.iata_code LIKE ?)`;
-    const searchTerm = `%${search}%`;
-    params.push(searchTerm, searchTerm, searchTerm);
-  }
-  
-  if (country) {
-    query += ` AND ia.country_code = ?`;
-    params.push(country);
-  }
-  
-  if (type && type !== 'all') {
-    query += ` AND ia.type = ?`;
-    params.push(type);
-  }
-  
-  if (baseFilter !== undefined) {
-    if (baseFilter === 'true') {
-      query += ` AND bd.id IS NOT NULL`;
-    } else {
-      query += ` AND bd.id IS NULL`;
+  try {
+    let query = `
+      SELECT ia.*, 
+             CASE WHEN bd.id IS NOT NULL THEN 1 ELSE 0 END as is_base,
+             bd.base_name,
+             bd.description as base_description,
+             bd.base_manager,
+             bd.notes as base_notes,
+             bd.image_url as base_image_url
+      FROM imported_airfields ia
+      LEFT JOIN base_designations bd ON ia.id = bd.airfield_id AND bd.is_active = 1
+      WHERE ia.is_active = 1
+    `;
+    
+    const params: any[] = [];
+    
+    if (search) {
+      query += ` AND (ia.name LIKE ? OR ia.icao_code LIKE ? OR ia.iata_code LIKE ?)`;
+      const searchTerm = `%${search}%`;
+      params.push(searchTerm, searchTerm, searchTerm);
     }
+    
+    if (country) {
+      query += ` AND ia.country_code = ?`;
+      params.push(country);
+    }
+    
+    if (type && type !== 'all') {
+      query += ` AND ia.type = ?`;
+      params.push(type);
+    }
+    
+    if (baseFilter !== undefined) {
+      if (baseFilter === 'true') {
+        query += ` AND bd.id IS NOT NULL`;
+      } else {
+        query += ` AND bd.id IS NULL`;
+      }
+    }
+    
+    query += ` ORDER BY ia.name ASC`;
+    
+    console.log('🔍 Airfields query:', query);
+    console.log('🔍 Airfields params:', params);
+    
+    const airfields = await c.env.DB.prepare(query).bind(...params).all();
+    
+    console.log('🔍 Airfields query result:', {
+      count: airfields.results?.length || 0,
+      sample: airfields.results?.[0],
+      allResults: airfields.results
+    });
+    
+    return c.json(airfields.results || []);
+  } catch (error) {
+    console.error('Error fetching airfields:', error);
+    return c.json({ error: 'Failed to fetch airfields' }, 500);
   }
-  
-  query += ` ORDER BY ia.name ASC`;
-  
-  console.log('🔍 Airfields query:', query);
-  console.log('🔍 Airfields params:', params);
-  
-  const airfields = await c.env.DB.prepare(query).bind(...params).all();
-  
-  console.log('🔍 Airfields query result:', {
-    count: airfields.results?.length || 0,
-    sample: airfields.results?.[0],
-    allResults: airfields.results
-  });
-  
-  return c.json(airfields.results);
 });
 
 // Delete individual airfield
@@ -1048,166 +1208,471 @@ app.post('/api/superadmin/airfields/import', superadminMiddleware, async (c) => 
     // Insert all airfields in batches
     const batchSize = 100;
     console.log(`📦 Starting database insertion of ${allAirfields.length} airfields in batches of ${batchSize}`);
-    
     for (let i = 0; i < allAirfields.length; i += batchSize) {
       const batch = allAirfields.slice(i, i + batchSize);
       
       for (const airfield of batch) {
+        // Always generate a UUID for id if not present
+        if (!airfield.id) airfield.id = crypto.randomUUID();
         try {
           await c.env.DB.prepare(`
-            INSERT OR REPLACE INTO imported_airfields (
-              id, our_airports_id, name, icao_code, iata_code, type, latitude, longitude,
-              elevation_ft, continent, country_code, country_name, region_code, region_name,
-              municipality, scheduled_service, gps_code, local_code, home_link, wikipedia_link, keywords,
-              is_active, created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO imported_airfields (id, our_airports_id, name, icao_code, iata_code, type, latitude, longitude, elevation_ft, continent, country_code, country_name, region_code, region_name, municipality, scheduled_service, gps_code, local_code, home_link, wikipedia_link, keywords, is_active, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           `).bind(
-            airfield.id, airfield.our_airports_id, airfield.name, airfield.icao_code,
-            airfield.iata_code, airfield.type, airfield.latitude, airfield.longitude,
-            airfield.elevation_ft, airfield.continent, airfield.country_code,
-            airfield.country_name, airfield.region_code, airfield.region_name,
-            airfield.municipality, airfield.scheduled_service, airfield.gps_code || null,
-            airfield.local_code || null, airfield.home_link || null, airfield.wikipedia_link || null,
-            airfield.keywords || null, airfield.is_active, airfield.created_at, airfield.updated_at
+            airfield.id,
+            airfield.our_airports_id,
+            airfield.name,
+            airfield.icao_code,
+            airfield.iata_code,
+            airfield.type,
+            airfield.latitude,
+            airfield.longitude,
+            airfield.elevation_ft,
+            airfield.continent,
+            airfield.country_code,
+            airfield.country_name,
+            airfield.region_code,
+            airfield.region_name,
+            airfield.municipality,
+            airfield.scheduled_service,
+            airfield.gps_code,
+            airfield.local_code,
+            airfield.home_link,
+            airfield.wikipedia_link,
+            airfield.keywords,
+            airfield.is_active,
+            airfield.created_at,
+            airfield.updated_at
           ).run();
-        } catch (dbError) {
-          console.error(`❌ Database insertion error for airfield ${airfield.name}:`, dbError);
+        } catch (error) {
+          console.error(`❌ Database insertion error for airfield ${airfield.name}:`, error);
           console.error(`❌ Airfield data:`, airfield);
-          throw new Error(`Database insertion failed for airfield ${airfield.name}: ${dbError.message}`);
+        }
+      }
+      console.log(`✅ Inserted batch of ${batch.length} airfields`);
+    }
+    console.log(`✅ All airfields imported successfully.`);
+    
+    // Update job status to completed
+    await c.env.DB.prepare(`
+      UPDATE import_jobs SET status = 'completed', updated_at = ? WHERE id = ?
+    `).bind(now, jobId).run();
+    
+    return c.json({ message: 'Airfields imported successfully', jobId });
+  } catch (error) {
+    console.error('Error importing airfields:', error);
+    await c.env.DB.prepare(`
+      UPDATE import_jobs SET status = 'failed', updated_at = ? WHERE id = ?
+    `).bind(now, jobId).run();
+    return c.json({ error: 'Failed to import airfields' }, 500);
+  }
+});
+
+// Import jobs status endpoint
+app.get('/api/superadmin/import-jobs', superadminMiddleware, async (c) => {
+  try {
+    const jobs = await c.env.DB.prepare(`
+      SELECT id, job_type, status, created_at, updated_at
+      FROM import_jobs 
+      ORDER BY created_at DESC
+    `).all();
+    
+    return c.json(jobs.results || []);
+  } catch (error) {
+    console.error('Error fetching import jobs:', error);
+    return c.json({ error: 'Failed to fetch import jobs' }, 500);
+  }
+});
+
+// Populate operational areas with OurAirports data
+app.post('/api/superadmin/operational-areas/populate', superadminMiddleware, async (c) => {
+  try {
+    console.log('🔍 Starting operational areas population from OurAirports data...');
+    
+    // Create import job
+    const jobId = crypto.randomUUID();
+    const now = new Date().toISOString();
+    
+    await c.env.DB.prepare(`
+      INSERT INTO import_jobs (id, job_type, status, created_at)
+      VALUES (?, 'operational_areas_populate', 'running', ?)
+    `).bind(jobId, now).run();
+    
+    // Fetch countries data from OurAirports
+    console.log('🔍 Fetching countries data from OurAirports...');
+    const countriesResponse = await fetch('https://davidmegginson.github.io/ourairports-data/countries.csv');
+    if (!countriesResponse.ok) {
+      throw new Error(`Failed to fetch countries data: ${countriesResponse.status}`);
+    }
+    const countriesText = await countriesResponse.text();
+    const countriesLines = countriesText.split('\n').slice(1); // Skip header
+    
+    // Fetch regions data from OurAirports
+    console.log('🔍 Fetching regions data from OurAirports...');
+    const regionsResponse = await fetch('https://davidmegginson.github.io/ourairports-data/regions.csv');
+    if (!regionsResponse.ok) {
+      throw new Error(`Failed to fetch regions data: ${regionsResponse.status}`);
+    }
+    const regionsText = await regionsResponse.text();
+    const regionsLines = regionsText.split('\n').slice(1); // Skip header
+    
+    // Helper function to parse CSV lines
+    function parseCSVLine(line: string): string[] {
+      const result = [];
+      let current = '';
+      let inQuotes = false;
+      
+      for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        
+        if (char === '"') {
+          inQuotes = !inQuotes;
+        } else if (char === ',' && !inQuotes) {
+          result.push(current.trim());
+          current = '';
+        } else {
+          current += char;
         }
       }
       
-      console.log(`📦 Inserted batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(allAirfields.length / batchSize)}`);
+      result.push(current.trim());
+      return result;
     }
     
-    // Update import job status
+    // Process continents and countries
+    const continents = new Map<string, string>();
+    const countries = new Map<string, { name: string, continent: string }>();
+    
+    for (const line of countriesLines) {
+      if (!line.trim()) continue;
+      const columns = parseCSVLine(line);
+      if (columns.length >= 3) {
+        const [code, name, continent] = columns;
+        continents.set(continent, continent);
+        countries.set(code, { name, continent });
+      }
+    }
+    
+    // Insert continents
+    console.log(`🔍 Inserting ${continents.size} continents...`);
+    for (const [continentCode, continentName] of continents) {
+      const continentId = crypto.randomUUID();
+      await c.env.DB.prepare(`
+        INSERT OR REPLACE INTO operational_areas (id, name, type, parent_id, is_active, created_at, updated_at)
+        VALUES (?, ?, 'continent', NULL, 1, ?, ?)
+      `).bind(continentId, continentName, now, now).run();
+    }
+    
+    // Insert countries
+    console.log(`🔍 Inserting ${countries.size} countries...`);
+    for (const [countryCode, countryData] of countries) {
+      const countryId = crypto.randomUUID();
+      const continentId = await c.env.DB.prepare(`
+        SELECT id FROM operational_areas WHERE name = ? AND type = 'continent'
+      `).bind(countryData.continent).first();
+      
+      await c.env.DB.prepare(`
+        INSERT OR REPLACE INTO operational_areas (id, name, type, parent_id, is_active, created_at, updated_at)
+        VALUES (?, ?, 'country', ?, 1, ?, ?)
+      `).bind(countryId, countryData.name, continentId?.id || null, now, now).run();
+    }
+    
+    // Process regions
+    const regions = new Map<string, { name: string, countryCode: string }>();
+    
+    for (const line of regionsLines) {
+      if (!line.trim()) continue;
+      const columns = parseCSVLine(line);
+      if (columns.length >= 4) {
+        const [code, localCode, name, continent, countryCode] = columns;
+        if (countryCode && name) {
+          regions.set(`${countryCode}-${localCode}`, { name, countryCode });
+        }
+      }
+    }
+    
+    // Insert regions
+    console.log(`🔍 Inserting ${regions.size} regions...`);
+    for (const [regionKey, regionData] of regions) {
+      const regionId = crypto.randomUUID();
+      const countryId = await c.env.DB.prepare(`
+        SELECT id FROM operational_areas WHERE name = ? AND type = 'country'
+      `).bind(countries.get(regionData.countryCode)?.name || regionData.countryCode).first();
+      
+      if (countryId?.id) {
+        await c.env.DB.prepare(`
+          INSERT OR REPLACE INTO operational_areas (id, name, type, parent_id, is_active, created_at, updated_at)
+          VALUES (?, ?, 'region', ?, 1, ?, ?)
+        `).bind(regionId, regionData.name, countryId.id, now, now).run();
+      }
+    }
+    
+    // Update job status to completed
     await c.env.DB.prepare(`
-      UPDATE import_jobs SET status = 'completed', total_records = ?, processed_records = ?, completed_at = ?
-      WHERE id = ?
-    `).bind(allAirfields.length, totalProcessed, new Date().toISOString(), jobId).run();
+      UPDATE import_jobs SET status = 'completed', updated_at = ? WHERE id = ?
+    `).bind(now, jobId).run();
+    
+    console.log('✅ Operational areas populated successfully');
     
     return c.json({ 
-      message: 'Airfields imported successfully from OurAirports',
+      message: 'Operational areas populated successfully', 
       jobId,
-      importedCount: allAirfields.length,
-      countriesProcessed: countryCodes.length
+      summary: {
+        continents: continents.size,
+        countries: countries.size,
+        regions: regions.size
+      }
     });
     
   } catch (error) {
-    // Update import job status on error
-    await c.env.DB.prepare(`
-      UPDATE import_jobs SET status = 'failed', error_message = ?, completed_at = ?
-      WHERE id = ?
-    `).bind(error.message, new Date().toISOString(), jobId).run();
-    
-    return c.json({ error: 'Import failed', details: error.message }, 500);
+    console.error('Error populating operational areas:', error);
+    return c.json({ error: 'Failed to populate operational areas' }, 500);
   }
 });
 
-// Base Designations endpoints
-app.post('/api/superadmin/bases', superadminMiddleware, async (c) => {
-  const data = await c.req.json();
-  const now = new Date().toISOString();
-  
-  console.log('🔍 Base designation request data:', data);
-  
-  // Handle both creating and updating base designations
-  if (data.isBase) {
-    // Check if a base designation already exists for this airfield
-    const existingBase = await c.env.DB.prepare(`
-      SELECT id FROM base_designations 
-      WHERE airfield_id = ? AND is_active = 1
-    `).bind(data.airfieldId).first();
+// Populate airfields with OurAirports data
+app.post('/api/superadmin/airfields/populate', superadminMiddleware, async (c) => {
+  try {
+    console.log('🔍 Starting airfields population from OurAirports data...');
     
-    const baseName = data.airfieldName || 'Company Base';
+    // Create import job
+    const jobId = crypto.randomUUID();
+    const now = new Date().toISOString();
     
-    if (existingBase) {
-      // Update existing base designation
-      await c.env.DB.prepare(`
-        UPDATE base_designations 
-        SET base_name = ?, description = ?, base_manager = ?, notes = ?, image_url = ?, updated_at = ?
-        WHERE id = ?
-      `).bind(
-        baseName,
-        data.baseDescription?.trim() || null, 
-        data.baseManager?.trim() || null, 
-        data.baseNotes?.trim() || null, 
-        data.imageUrl || null,
-        now,
-        existingBase.id
-      ).run();
-    } else {
-      // Create new base designation
-      const id = crypto.randomUUID();
-      await c.env.DB.prepare(`
-        INSERT INTO base_designations (id, airfield_id, base_name, description, base_manager, notes, image_url, is_active, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).bind(
-        id, 
-        data.airfieldId, 
-        baseName,
-        data.baseDescription?.trim() || null, 
-        data.baseManager?.trim() || null, 
-        data.baseNotes?.trim() || null, 
-        data.imageUrl || null,
-        1, 
-        now, 
-        now
-      ).run();
+    await c.env.DB.prepare(`
+      INSERT INTO import_jobs (id, job_type, status, created_at)
+      VALUES (?, 'airfields_populate', 'running', ?)
+    `).bind(jobId, now).run();
+    
+    // Fetch airports data from OurAirports
+    console.log('🔍 Fetching airports data from OurAirports...');
+    const airportsResponse = await fetch('https://davidmegginson.github.io/ourairports-data/airports.csv');
+    if (!airportsResponse.ok) {
+      throw new Error(`Failed to fetch airports data: ${airportsResponse.status}`);
     }
-  } else {
-    // Remove base designation
+    const airportsText = await airportsResponse.text();
+    const airportsLines = airportsText.split('\n').slice(1); // Skip header
+    
+    // Helper function to parse CSV lines
+    function parseCSVLine(line: string): string[] {
+      const result = [];
+      let current = '';
+      let inQuotes = false;
+      
+      for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        
+        if (char === '"') {
+          inQuotes = !inQuotes;
+        } else if (char === ',' && !inQuotes) {
+          result.push(current.trim());
+          current = '';
+        } else {
+          current += char;
+        }
+      }
+      
+      result.push(current.trim());
+      return result;
+    }
+    
+    // Process airports
+    let insertedCount = 0;
+    const batchSize = 100;
+    let batch = [];
+    
+    console.log(`🔍 Processing ${airportsLines.length} airports...`);
+    
+    for (const line of airportsLines) {
+      if (!line.trim()) continue;
+      const columns = parseCSVLine(line);
+      if (columns.length >= 19) {
+        const [
+          id, ident, type, name, latitude_deg, longitude_deg, elevation_ft,
+          continent, iso_country, iso_region, municipality, scheduled_service,
+          icao_code, iata_code, gps_code, local_code, home_link, wikipedia_link, keywords
+        ] = columns;
+        
+        // Only process airports (not heliports, seaplane bases, etc.)
+        if (type === 'small_airport' || type === 'medium_airport' || type === 'large_airport') {
+          const airfieldId = crypto.randomUUID();
+          const airfieldData = {
+            id: airfieldId, // Always generate a UUID
+            name: name || 'Unknown Airport',
+            type: type,
+            icao_code: icao_code || null,
+            iata_code: iata_code || null,
+            gps_code: gps_code || null,
+            local_code: local_code || null,
+            latitude: parseFloat(latitude_deg) || null,
+            longitude: parseFloat(longitude_deg) || null,
+            elevation_ft: parseFloat(elevation_ft) || null,
+            municipality: municipality || null,
+            iso_country: iso_country || null,
+            iso_region: iso_region || null,
+            scheduled_service: scheduled_service === 'yes',
+            is_active: true,
+            created_at: now,
+            updated_at: now
+          };
+          
+          batch.push(airfieldData);
+          
+          if (batch.length >= batchSize) {
+            // Insert batch
+            for (const airfield of batch) {
+              // Always generate a UUID for id if not present
+              if (!airfield.id) airfield.id = crypto.randomUUID();
+              await c.env.DB.prepare(`
+                INSERT OR REPLACE INTO imported_airfields (
+                  id, name, type, icao_code, iata_code, gps_code, local_code,
+                  latitude, longitude, elevation_ft, municipality, iso_country,
+                  iso_region, scheduled_service, is_active, created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+              `).bind(
+                airfield.id, airfield.name, airfield.type, airfield.icao_code,
+                airfield.iata_code, airfield.gps_code, airfield.local_code,
+                airfield.latitude, airfield.longitude, airfield.elevation_ft,
+                airfield.municipality, airfield.iso_country, airfield.iso_region,
+                airfield.scheduled_service, airfield.is_active, airfield.created_at,
+                airfield.updated_at
+              ).run();
+            }
+            
+            insertedCount += batch.length;
+            console.log(`🔍 Inserted ${insertedCount} airfields so far...`);
+            batch = [];
+          }
+        }
+      }
+    }
+    
+    // Insert remaining batch
+    if (batch.length > 0) {
+      for (const airfield of batch) {
+        // Always generate a UUID for id if not present
+        if (!airfield.id) airfield.id = crypto.randomUUID();
+        await c.env.DB.prepare(`
+          INSERT OR REPLACE INTO imported_airfields (
+            id, name, type, icao_code, iata_code, gps_code, local_code,
+            latitude, longitude, elevation_ft, municipality, iso_country,
+            iso_region, scheduled_service, is_active, created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).bind(
+          airfield.id, airfield.name, airfield.type, airfield.icao_code,
+          airfield.iata_code, airfield.gps_code, airfield.local_code,
+          airfield.latitude, airfield.longitude, airfield.elevation_ft,
+          airfield.municipality, airfield.iso_country, airfield.iso_region,
+          airfield.scheduled_service, airfield.is_active, airfield.created_at,
+          airfield.updated_at
+        ).run();
+      }
+      insertedCount += batch.length;
+    }
+    
+    // Update job status to completed
     await c.env.DB.prepare(`
-      UPDATE base_designations 
-      SET is_active = 0, updated_at = ? 
-      WHERE airfield_id = ? AND is_active = 1
-    `).bind(now, data.airfieldId).run();
+      UPDATE import_jobs SET status = 'completed', updated_at = ? WHERE id = ?
+    `).bind(now, jobId).run();
+    
+    console.log('✅ Airfields populated successfully');
+    
+    return c.json({ 
+      message: 'Airfields populated successfully', 
+      jobId,
+      summary: {
+        total_processed: airportsLines.length,
+        airfields_inserted: insertedCount
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error populating airfields:', error);
+    return c.json({ error: 'Failed to populate airfields' }, 500);
   }
-  
-  return c.json({ success: true, message: 'Base designation updated successfully' }, 201);
 });
 
-app.put('/api/superadmin/bases/:id', superadminMiddleware, async (c) => {
-  const id = c.req.param('id');
-  const data = await c.req.json();
-  const now = new Date().toISOString();
-  
-  await c.env.DB.prepare(`
-    UPDATE base_designations SET description = ?, base_manager = ?, notes = ?, image_url = ?, is_active = ?, updated_at = ?
-    WHERE id = ?
-  `).bind(
-    data.description, data.baseManager, data.notes, data.imageUrl || null, data.isActive ? 1 : 0, now, id
-  ).run();
-  
-  return c.json({ id, ...data, updated_at: now });
-});
+// --- Continents and Countries Population Endpoint ---
+app.post('/api/superadmin/continents-countries/populate', superadminMiddleware, async (c) => {
+  try {
+    // 1. Define static list of continents
+    const continents = [
+      { code: 'AF', name: 'Africa' },
+      { code: 'AN', name: 'Antarctica' },
+      { code: 'AS', name: 'Asia' },
+      { code: 'EU', name: 'Europe' },
+      { code: 'NA', name: 'North America' },
+      { code: 'OC', name: 'Oceania' },
+      { code: 'SA', name: 'South America' },
+    ];
 
-app.delete('/api/superadmin/bases/:id', superadminMiddleware, async (c) => {
-  const id = c.req.param('id');
-  await c.env.DB.prepare('DELETE FROM base_designations WHERE id = ?').bind(id).run();
-  return c.json({ message: 'Base designation deleted' });
-});
+    // 2. Insert continents
+    for (const cont of continents) {
+      await c.env.DB.prepare(
+        'INSERT OR IGNORE INTO continents (code, name) VALUES (?, ?);'
+      ).bind(cont.code, cont.name).run();
+    }
 
-// Import Jobs endpoints
-app.get('/api/superadmin/import-jobs', superadminMiddleware, async (c) => {
-  const jobs = await c.env.DB.prepare(`
-    SELECT * FROM import_jobs 
-    ORDER BY created_at DESC 
-    LIMIT 50
-  `).all();
-  
-  return c.json(jobs.results);
-});
+    // 3. Fetch countries.csv from OurAirports
+    const url = 'https://raw.githubusercontent.com/davidmegginson/ourairports-data/refs/heads/main/countries.csv';
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error('Failed to fetch countries.csv');
+    const csv = await resp.text();
 
-app.get('/api/superadmin/import-jobs/:id', superadminMiddleware, async (c) => {
-  const id = c.req.param('id');
-  const job = await c.env.DB.prepare('SELECT * FROM import_jobs WHERE id = ?').bind(id).first();
-  
-  if (!job) {
-    return c.json({ error: 'Import job not found' }, 404);
+    // 4. Parse CSV (skip header)
+    const lines = csv.split('\n').filter(Boolean);
+    const header = lines.shift();
+    for (const line of lines) {
+      // id,code,name,continent,wikipedia_link,keywords
+      const match = line.match(/^(?:"([^"]*)"|([^,]*)),(?:"([^"]*)"|([^,]*)),(?:"([^"]*)"|([^,]*)),(?:"([^"]*)"|([^,]*)),(?:"([^"]*)"|([^,]*)),?(.*)$/);
+      if (!match) continue;
+      const [_, id1, id2, code1, code2, name1, name2, cont1, cont2, wiki1, wiki2, keywords] = match;
+      const code = code1 || code2;
+      const name = name1 || name2;
+      const continent_code = cont1 || cont2;
+      const wikipedia_link = wiki1 || wiki2;
+      const kw = keywords ? keywords.replace(/^"|"$/g, '') : null;
+      if (!code || !name || !continent_code) continue;
+      await c.env.DB.prepare(
+        'INSERT OR IGNORE INTO countries (code, name, continent_code, wikipedia_link, keywords) VALUES (?, ?, ?, ?, ?);'
+      ).bind(code, name, continent_code, wikipedia_link, kw).run();
+    }
+
+    return c.json({ success: true, message: 'Continents and countries populated.' });
+  } catch (err) {
+    console.error('Error populating continents/countries:', err);
+    return c.json({ error: err.message }, 500);
   }
-  
-  return c.json(job);
 });
 
-export default app; 
+// Get continents
+app.get('/api/superadmin/continents', superadminMiddleware, async (c) => {
+  try {
+    const result = await c.env.DB.prepare(`
+      SELECT code, name FROM continents ORDER BY name
+    `).all();
+    
+    return c.json(result.results || []);
+  } catch (error) {
+    console.error('Error fetching continents:', error);
+    return c.json({ error: 'Failed to fetch continents' }, 500);
+  }
+});
+
+// Get countries
+app.get('/api/superadmin/countries', superadminMiddleware, async (c) => {
+  try {
+    const result = await c.env.DB.prepare(`
+      SELECT code, name, continent_code, wikipedia_link, keywords 
+      FROM countries ORDER BY name
+    `).all();
+    
+    return c.json(result.results || []);
+  } catch (error) {
+    console.error('Error fetching countries:', error);
+    return c.json({ error: 'Failed to fetch countries' }, 500);
+  }
+});
+
+export default app;
+
