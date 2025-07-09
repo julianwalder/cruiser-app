@@ -137,6 +137,10 @@ bucket_name = "cruiser-storage-prod"
 binding = "CACHE"
 id = "f10d38b010894c3a8e75c77d2b0ae6a9"
 
+[[env.production.kv_namespaces]]
+binding = "STATIC_CONTENT"
+id = "f10d38b010894c3a8e75c77d2b0ae6a9"
+
 [env.production.vars]
 VITE_API_URL = "https://api.cruiseraviation.com"
 VITE_APP_NAME = "Cruiser Aviation"
