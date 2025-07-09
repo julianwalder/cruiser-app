@@ -50,9 +50,7 @@ const BaseManagement: React.FC<BaseManagementProps> = ({ userRole = 'user' }) =>
     baseName: '',
     baseDescription: '',
     baseManager: '',
-    baseNotes: '',
-    contactPhone: '',
-    contactEmail: ''
+    baseNotes: ''
   });
 
   // Designated airfields data from API
@@ -95,9 +93,7 @@ const BaseManagement: React.FC<BaseManagementProps> = ({ userRole = 'user' }) =>
       baseName: '',
       baseDescription: '',
       baseManager: '',
-      baseNotes: '',
-      contactPhone: '',
-      contactEmail: ''
+      baseNotes: ''
     });
   };
 
@@ -117,8 +113,8 @@ const BaseManagement: React.FC<BaseManagementProps> = ({ userRole = 'user' }) =>
           isBase: true,
           baseName: baseFormData.baseName,
           baseDescription: baseFormData.baseDescription,
-          contactPhone: baseFormData.contactPhone,
-          contactEmail: baseFormData.contactEmail
+          baseManager: baseFormData.baseManager,
+          baseNotes: baseFormData.baseNotes
         }),
       });
 
@@ -150,9 +146,7 @@ const BaseManagement: React.FC<BaseManagementProps> = ({ userRole = 'user' }) =>
       baseName: airfield.base_name || airfield.name,
       baseDescription: airfield.base_description || '',
       baseManager: airfield.base_manager || '',
-      baseNotes: airfield.base_notes || '',
-      contactPhone: '',
-      contactEmail: ''
+      baseNotes: airfield.base_notes || ''
     });
     setIsEditMode(true);
     setShowBaseModal(true);
@@ -433,28 +427,6 @@ const BaseManagement: React.FC<BaseManagementProps> = ({ userRole = 'user' }) =>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Contact Phone</label>
-                  <input
-                    type="tel"
-                    value={baseFormData.contactPhone}
-                    onChange={e => handleBaseFormChange('contactPhone', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="+1 (555) 123-4567"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Contact Email</label>
-                  <input
-                    type="email"
-                    value={baseFormData.contactEmail}
-                    onChange={e => handleBaseFormChange('contactEmail', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="manager@base.com"
-                  />
-                </div>
-
-                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
                   <textarea
                     value={baseFormData.baseNotes}
@@ -541,6 +513,12 @@ const BaseManagement: React.FC<BaseManagementProps> = ({ userRole = 'user' }) =>
                 <div>
                   <h4 className="font-medium text-gray-900 mb-3">Base Information</h4>
                   <div className="space-y-3">
+                    {selectedBase.base_name && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">Base Name</label>
+                        <p className="text-sm text-gray-900">{selectedBase.base_name}</p>
+                      </div>
+                    )}
                     {selectedBase.base_description && (
                       <div>
                         <label className="block text-sm font-medium text-gray-700">Description</label>

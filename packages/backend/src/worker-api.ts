@@ -1099,31 +1099,52 @@ app.post('/api/superadmin/airfields/import', superadminMiddleware, async (c) => 
 // Base Designations endpoints
 app.post('/api/superadmin/bases', superadminMiddleware, async (c) => {
   const data = await c.req.json();
-  const id = crypto.randomUUID();
   const now = new Date().toISOString();
   
   console.log('🔍 Base designation request data:', data);
   
   // Handle both creating and updating base designations
   if (data.isBase) {
-    // Create or update base designation
-    // Use the airfield name as default base name if none provided
+    // Check if a base designation already exists for this airfield
+    const existingBase = await c.env.DB.prepare(`
+      SELECT id FROM base_designations 
+      WHERE airfield_id = ? AND is_active = 1
+    `).bind(data.airfieldId).first();
+    
     const baseName = data.baseName?.trim() || data.airfieldName || 'Company Base';
     
-    await c.env.DB.prepare(`
-      INSERT OR REPLACE INTO base_designations (id, airfield_id, base_name, description, base_manager, notes, is_active, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).bind(
-      id, 
-      data.airfieldId, 
-      baseName,
-      data.baseDescription?.trim() || null, 
-      data.contactPhone?.trim() || null, 
-      data.contactEmail?.trim() || null, 
-      1, 
-      now, 
-      now
-    ).run();
+    if (existingBase) {
+      // Update existing base designation
+      await c.env.DB.prepare(`
+        UPDATE base_designations 
+        SET base_name = ?, description = ?, base_manager = ?, notes = ?, updated_at = ?
+        WHERE id = ?
+      `).bind(
+        baseName,
+        data.baseDescription?.trim() || null, 
+        data.baseManager?.trim() || null, 
+        data.baseNotes?.trim() || null, 
+        now,
+        existingBase.id
+      ).run();
+    } else {
+      // Create new base designation
+      const id = crypto.randomUUID();
+      await c.env.DB.prepare(`
+        INSERT INTO base_designations (id, airfield_id, base_name, description, base_manager, notes, is_active, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).bind(
+        id, 
+        data.airfieldId, 
+        baseName,
+        data.baseDescription?.trim() || null, 
+        data.baseManager?.trim() || null, 
+        data.baseNotes?.trim() || null, 
+        1, 
+        now, 
+        now
+      ).run();
+    }
   } else {
     // Remove base designation
     await c.env.DB.prepare(`

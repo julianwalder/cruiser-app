@@ -116,12 +116,8 @@ const AirfieldManagement: React.FC<AirfieldManagementProps> = ({ userRole = 'use
   const [editFormData, setEditFormData] = useState({
     baseName: '',
     baseDescription: '',
-    contactPhone: '',
-    contactEmail: '',
-    operatingHours: '',
-    facilities: '',
-    fuelTypes: '',
-    runwayInfo: '',
+    baseManager: '',
+    baseNotes: '',
     isBase: false
   });
 
@@ -274,8 +270,8 @@ const AirfieldManagement: React.FC<AirfieldManagementProps> = ({ userRole = 'use
           isBase: isBase,
           baseName: isBase ? airfield.name : undefined,
           baseDescription: '',
-          contactPhone: '',
-          contactEmail: ''
+          baseManager: '',
+          baseNotes: ''
         }),
       });
       
@@ -338,12 +334,8 @@ const AirfieldManagement: React.FC<AirfieldManagementProps> = ({ userRole = 'use
     setEditFormData({
       baseName: airfield.base_name || '',
       baseDescription: airfield.base_description || '',
-      contactPhone: '',
-      contactEmail: '',
-      operatingHours: '',
-      facilities: '',
-      fuelTypes: '',
-      runwayInfo: '',
+      baseManager: airfield.base_manager || '',
+      baseNotes: airfield.base_notes || '',
       isBase: Boolean(airfield.is_base)
     });
     setShowEditAirfieldModal(true);
@@ -373,12 +365,8 @@ const AirfieldManagement: React.FC<AirfieldManagementProps> = ({ userRole = 'use
         setEditFormData({
           baseName: '',
           baseDescription: '',
-          contactPhone: '',
-          contactEmail: '',
-          operatingHours: '',
-          facilities: '',
-          fuelTypes: '',
-          runwayInfo: '',
+          baseManager: '',
+          baseNotes: '',
           isBase: false
         });
         toast.success('Airfield updated successfully!');
@@ -965,18 +953,13 @@ const AirfieldManagement: React.FC<AirfieldManagementProps> = ({ userRole = 'use
 
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Contact Phone</label>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Base Manager</label>
                           <p className="text-sm text-gray-900">{selectedAirfield.base_manager || 'N/A'}</p>
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Contact Email</label>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
                           <p className="text-sm text-gray-900">{selectedAirfield.base_notes || 'N/A'}</p>
                         </div>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Operating Hours</label>
-                        <p className="text-sm text-gray-900">{selectedAirfield.scheduled_service ? '24/7' : 'N/A'}</p>
                       </div>
                     </>
                   )}
@@ -1106,69 +1089,25 @@ const AirfieldManagement: React.FC<AirfieldManagementProps> = ({ userRole = 'use
 
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Contact Phone</label>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Base Manager</label>
                           <input
-                            type="tel"
-                            value={editFormData.contactPhone}
-                            onChange={(e) => handleEditFormChange('contactPhone', e.target.value)}
+                            type="text"
+                            value={editFormData.baseManager}
+                            onChange={(e) => handleEditFormChange('baseManager', e.target.value)}
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="+1 (555) 123-4567"
+                            placeholder="Base manager name"
                           />
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Contact Email</label>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
                           <input
-                            type="email"
-                            value={editFormData.contactEmail}
-                            onChange={(e) => handleEditFormChange('contactEmail', e.target.value)}
+                            type="text"
+                            value={editFormData.baseNotes}
+                            onChange={(e) => handleEditFormChange('baseNotes', e.target.value)}
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="contact@base.com"
+                            placeholder="Additional notes"
                           />
                         </div>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Operating Hours</label>
-                        <input
-                          type="text"
-                          value={editFormData.operatingHours}
-                          onChange={(e) => handleEditFormChange('operatingHours', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          placeholder="e.g., 24/7 or 6:00 AM - 10:00 PM"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Facilities</label>
-                        <textarea
-                          value={editFormData.facilities}
-                          onChange={(e) => handleEditFormChange('facilities', e.target.value)}
-                          rows={2}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          placeholder="e.g., Maintenance hangar, fuel station, pilot lounge"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Fuel Types</label>
-                        <input
-                          type="text"
-                          value={editFormData.fuelTypes}
-                          onChange={(e) => handleEditFormChange('fuelTypes', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          placeholder="e.g., 100LL, Jet-A, Mogas"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Runway Information</label>
-                        <textarea
-                          value={editFormData.runwayInfo}
-                          onChange={(e) => handleEditFormChange('runwayInfo', e.target.value)}
-                          rows={2}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          placeholder="e.g., Runway 09/27: 3,000 ft asphalt"
-                        />
                       </div>
                     </>
                   )}
