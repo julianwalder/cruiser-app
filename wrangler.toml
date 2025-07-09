@@ -1,5 +1,5 @@
 # Root-level wrangler.toml for Cloudflare Workers deployment
-name = "cruiser-aviation-app"
+name = "cruiser-aviation-frontend-staging"
 main = "packages/frontend/src/worker.ts"
 compatibility_date = "2025-07-09"
 
