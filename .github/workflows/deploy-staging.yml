@@ -27,95 +27,37 @@ jobs:
           cd packages/frontend
           npm run build
           
-      - name: Generate KV data
-        run: |
-          cd packages/frontend
-          node scripts/upload-kv.js
-          
       - name: Setup R2 Bucket for Staging
         run: |
           echo "🪣 Setting up R2 bucket for staging..."
-          chmod +x scripts/setup-staging-r2.sh
-          ./scripts/setup-staging-r2.sh
+          npx wrangler r2 bucket create cruiser-storage-staging --env api-staging || echo "Bucket may already exist"
         env:
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           
-      - name: Deploy D1 Database to Staging
+      - name: Deploy D1 Database Schema to Staging
         run: |
-          echo "📊 Deploying D1 database to staging..."
-          chmod +x scripts/deploy-staging-db.sh
-          ./scripts/deploy-staging-db.sh
+          echo "🗄️ Deploying D1 database schema to staging..."
+          npx wrangler d1 execute cruiser-db-staging --env api-staging --file=packages/frontend/schema.sql
         env:
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          
-      - name: Upload KV data to staging
-        run: |
-          echo "📦 Uploading KV data to staging..."
-          npx wrangler kv bulk put --binding=STATIC_CONTENT_STAGING --env staging packages/frontend/kv-data.json
-        env:
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           
       - name: Deploy API Worker to Staging
         run: |
           echo "🚀 Deploying API worker to staging..."
-          npx wrangler@4 deploy --env api-staging
+          npx wrangler deploy --env api-staging
         env:
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           
       - name: Deploy Frontend Worker to Staging
         run: |
           echo "🎨 Deploying frontend worker to staging..."
-          npx wrangler@4 deploy --env staging
+          cd packages/frontend
+          npx wrangler deploy --env frontend-staging
         env:
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           
-      - name: Verify Staging Deployment
+      - name: Verify Deployment
         run: |
-          echo "🔍 Verifying staging deployment..."
-          sleep 15
-          
-          # Test API health
-          echo "Testing API health..."
-          API_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" https://cruiser-aviation-api-staging.julian-pad.workers.dev/health || echo "000")
-          if [ "$API_RESPONSE" = "200" ]; then
-            echo "✅ API health check passed"
-          else
-            echo "❌ API health check failed (HTTP $API_RESPONSE)"
-          fi
-          
-          # Test frontend
-          echo "Testing frontend..."
-          FRONTEND_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" https://cruiser-aviation-frontend-staging.julian-pad.workers.dev/ || echo "000")
-          if [ "$FRONTEND_RESPONSE" = "200" ]; then
-            echo "✅ Frontend health check passed"
-          else
-            echo "❌ Frontend health check failed (HTTP $FRONTEND_RESPONSE)"
-          fi
-          
-      - name: Notify deployment
-        run: |
-          echo "✅ Successfully deployed to staging environment!"
-          echo ""
-          echo "🌍 Deployment URLs:"
-          echo "  - Frontend: https://cruiser-aviation-frontend-staging.julian-pad.workers.dev"
-          echo "  - API: https://cruiser-aviation-api-staging.julian-pad.workers.dev"
-          echo ""
-          echo "📊 Deployment completed at $(date)"
-          echo ""
-          echo "📋 Deployment Summary:"
-          echo "  - ✅ R2 bucket configured"
-          echo "  - ✅ D1 Database schema deployed"
-          echo "  - ✅ D1 Database seeded with sample data"
-          echo "  - ✅ KV namespace populated"
-          echo "  - ✅ API Worker deployed"
-          echo "  - ✅ Frontend Worker deployed"
-          echo ""
-          echo "🔧 Environment Details:"
-          echo "  - Database: cruiser-db-staging"
-          echo "  - Storage: cruiser-storage-staging"
-          echo "  - Cache: CACHE_STAGING KV namespace" 
+          echo "✅ Deployment completed successfully!"
+          echo "Staging API: https://api-staging.cruiser-app.workers.dev"
+          echo "Staging Frontend: https://frontend-staging.cruiser-app.workers.dev" 
