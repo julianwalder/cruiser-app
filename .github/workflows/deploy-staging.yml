@@ -52,12 +52,12 @@ jobs:
         run: |
           echo "🎨 Deploying frontend worker to staging..."
           cd packages/frontend
-          npx wrangler deploy --env frontend-staging
+          npx wrangler deploy --env staging
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           
       - name: Verify Deployment
         run: |
-          echo "✅ Deployment completed successfully!"
-          echo "Staging API: https://api-staging.cruiser-app.workers.dev"
-          echo "Staging Frontend: https://frontend-staging.cruiser-app.workers.dev" 
+          echo "✅ Staging deployment completed successfully!"
+          echo "🌐 API: https://cruiser-aviation-api-staging.julian-pad.workers.dev"
+          echo "🎨 Frontend: https://cruiser-aviation-frontend-staging.julian-pad.workers.dev" 
