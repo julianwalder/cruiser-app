@@ -82,8 +82,12 @@ VITE_CLOUDFLARE_ACCESS_TEAM_DOMAIN = "cruiseraviation.com"
 # API Local Environment
 [env.api-local]
 name = "cruiser-aviation-api-local"
-main = "packages/backend/src/worker-api.ts"
+main = "_worker.ts"
 compatibility_date = "2025-07-09"
+
+# Workers Sites configuration for local
+[env.api-local.site]
+bucket = "packages/frontend/dist"
 
 [[env.api-local.d1_databases]]
 binding = "DB"
