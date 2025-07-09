@@ -386,6 +386,8 @@ app.post('/api/admin/bases/upload-image', adminMiddleware, async (c) => {
   return handleImageUpload(c, 'bases', 'image');
 });
 
+
+
 // Service image upload endpoint
 app.post('/api/admin/services/upload-image', adminMiddleware, async (c) => {
   return handleImageUpload(c, 'services', 'image');
@@ -642,6 +644,11 @@ const superadminMiddleware = async (c: any, next: any) => {
   await next();
 };
 
+// Base designation image upload endpoint
+app.post('/api/superadmin/bases/upload-image', superadminMiddleware, async (c) => {
+  return handleImageUpload(c, 'base-designations', 'image');
+});
+
 // Operational Areas endpoints
 app.get('/api/superadmin/operational-areas', superadminMiddleware, async (c) => {
   const areas = await c.env.DB.prepare(`
@@ -689,7 +696,8 @@ app.get('/api/superadmin/airfields', superadminMiddleware, async (c) => {
            bd.base_name,
            bd.description as base_description,
            bd.base_manager,
-           bd.notes as base_notes
+           bd.notes as base_notes,
+           bd.image_url as base_image_url
     FROM imported_airfields ia
     LEFT JOIN base_designations bd ON ia.id = bd.airfield_id AND bd.is_active = 1
     WHERE ia.is_active = 1
@@ -1117,13 +1125,14 @@ app.post('/api/superadmin/bases', superadminMiddleware, async (c) => {
       // Update existing base designation
       await c.env.DB.prepare(`
         UPDATE base_designations 
-        SET base_name = ?, description = ?, base_manager = ?, notes = ?, updated_at = ?
+        SET base_name = ?, description = ?, base_manager = ?, notes = ?, image_url = ?, updated_at = ?
         WHERE id = ?
       `).bind(
         baseName,
         data.baseDescription?.trim() || null, 
         data.baseManager?.trim() || null, 
         data.baseNotes?.trim() || null, 
+        data.imageUrl || null,
         now,
         existingBase.id
       ).run();
@@ -1131,8 +1140,8 @@ app.post('/api/superadmin/bases', superadminMiddleware, async (c) => {
       // Create new base designation
       const id = crypto.randomUUID();
       await c.env.DB.prepare(`
-        INSERT INTO base_designations (id, airfield_id, base_name, description, base_manager, notes, is_active, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO base_designations (id, airfield_id, base_name, description, base_manager, notes, image_url, is_active, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).bind(
         id, 
         data.airfieldId, 
@@ -1140,6 +1149,7 @@ app.post('/api/superadmin/bases', superadminMiddleware, async (c) => {
         data.baseDescription?.trim() || null, 
         data.baseManager?.trim() || null, 
         data.baseNotes?.trim() || null, 
+        data.imageUrl || null,
         1, 
         now, 
         now
@@ -1163,10 +1173,10 @@ app.put('/api/superadmin/bases/:id', superadminMiddleware, async (c) => {
   const now = new Date().toISOString();
   
   await c.env.DB.prepare(`
-    UPDATE base_designations SET description = ?, base_manager = ?, notes = ?, is_active = ?, updated_at = ?
+    UPDATE base_designations SET description = ?, base_manager = ?, notes = ?, image_url = ?, is_active = ?, updated_at = ?
     WHERE id = ?
   `).bind(
-    data.description, data.baseManager, data.notes, data.isActive ? 1 : 0, now, id
+    data.description, data.baseManager, data.notes, data.imageUrl || null, data.isActive ? 1 : 0, now, id
   ).run();
   
   return c.json({ id, ...data, updated_at: now });

@@ -30,6 +30,7 @@ interface DesignatedAirfield {
   base_description: string | null;
   base_manager: string | null;
   base_notes: string | null;
+  base_image_url: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -52,7 +53,8 @@ const BaseManagement: React.FC<BaseManagementProps> = ({ userRole = 'user' }) =>
   const [baseFormData, setBaseFormData] = useState({
     baseDescription: '',
     baseManager: '',
-    baseNotes: ''
+    baseNotes: '',
+    imageUrl: ''
   });
 
   // Designated airfields data from API
@@ -94,7 +96,8 @@ const BaseManagement: React.FC<BaseManagementProps> = ({ userRole = 'user' }) =>
     setBaseFormData({
       baseDescription: '',
       baseManager: '',
-      baseNotes: ''
+      baseNotes: '',
+      imageUrl: ''
     });
   };
 
@@ -114,7 +117,8 @@ const BaseManagement: React.FC<BaseManagementProps> = ({ userRole = 'user' }) =>
           isBase: true,
           baseDescription: baseFormData.baseDescription,
           baseManager: baseFormData.baseManager,
-          baseNotes: baseFormData.baseNotes
+          baseNotes: baseFormData.baseNotes,
+          imageUrl: baseFormData.imageUrl
         }),
       });
 
@@ -145,7 +149,8 @@ const BaseManagement: React.FC<BaseManagementProps> = ({ userRole = 'user' }) =>
     setBaseFormData({
       baseDescription: airfield.base_description || '',
       baseManager: airfield.base_manager || '',
-      baseNotes: airfield.base_notes || ''
+      baseNotes: airfield.base_notes || '',
+      imageUrl: airfield.base_image_url || ''
     });
     setIsEditMode(true);
     setShowBaseModal(true);
@@ -280,12 +285,20 @@ const BaseManagement: React.FC<BaseManagementProps> = ({ userRole = 'user' }) =>
                 <div key={airfield.id} className="bg-white rounded-lg shadow-md overflow-hidden flex flex-col min-h-[400px]">
                   {/* Image Section - 16:9 Aspect Ratio */}
                   <div className="relative w-full" style={{ aspectRatio: '16/9' }}>
-                    <div className="w-full h-full bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
-                      <div className="text-center">
-                        <MapPin className="w-12 h-12 text-blue-500 mx-auto mb-2" />
-                        <p className="text-sm text-blue-600 font-medium">Airfield Base</p>
+                    {airfield.base_image_url ? (
+                      <img 
+                        src={airfield.base_image_url} 
+                        alt={`${airfield.name} base`}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+                        <div className="text-center">
+                          <MapPin className="w-12 h-12 text-blue-500 mx-auto mb-2" />
+                          <p className="text-sm text-blue-600 font-medium">Airfield Base</p>
+                        </div>
                       </div>
-                    </div>
+                    )}
                     {/* Base Badge Overlay */}
                     <div className="absolute top-3 left-3">
                       <span className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
@@ -426,6 +439,58 @@ const BaseManagement: React.FC<BaseManagementProps> = ({ userRole = 'user' }) =>
                     placeholder="Additional notes..."
                   />
                 </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Base Image</label>
+                  <div className="space-y-2">
+                    {baseFormData.imageUrl && (
+                      <div className="relative">
+                        <img 
+                          src={baseFormData.imageUrl} 
+                          alt="Base preview" 
+                          className="w-full h-32 object-cover rounded-md border border-gray-300"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleBaseFormChange('imageUrl', '')}
+                          className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm hover:bg-red-600"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    )}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const formData = new FormData();
+                          formData.append('image', file);
+                          
+                          try {
+                            const response = await fetch(`${API_URL}/api/superadmin/bases/upload-image`, {
+                              method: 'POST',
+                              body: formData,
+                            });
+                            
+                            if (response.ok) {
+                              const result = await response.json() as { url: string };
+                              handleBaseFormChange('imageUrl', result.url);
+                            } else {
+                              toast.error('Failed to upload image');
+                            }
+                          } catch (error) {
+                            console.error('Upload error:', error);
+                            toast.error('Failed to upload image');
+                          }
+                        }
+                      }}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <p className="text-xs text-gray-500">Upload an image for the base (JPEG, PNG, WebP, max 5MB)</p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -526,6 +591,16 @@ const BaseManagement: React.FC<BaseManagementProps> = ({ userRole = 'user' }) =>
                         <label className="block text-sm font-medium text-gray-700">Notes</label>
                         <p className="text-sm text-gray-900">{selectedBase.base_notes}</p>
                     </div>
+                    )}
+                    {selectedBase.base_image_url && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">Base Image</label>
+                        <img 
+                          src={selectedBase.base_image_url} 
+                          alt={`${selectedBase.name} base`}
+                          className="w-full h-48 object-cover rounded-md border border-gray-300 mt-2"
+                        />
+                      </div>
                     )}
                   </div>
                 </div>
