@@ -2,7 +2,7 @@ name: Deploy to Staging
 
 on:
   push:
-    branches: [dev, staging]
+    branches: [dev]
   workflow_dispatch:
 
 jobs:
@@ -10,54 +10,51 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
         
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-          
-      - name: Install dependencies
-        run: npm ci
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Build frontend
+      run: |
+        cd packages/frontend
+        npm run build
+        cd ../..
         
-      - name: Build project
-        run: |
-          cd packages/frontend
-          npm run build
-          
-      - name: Setup R2 Bucket for Staging
-        run: |
-          echo "🪣 Setting up R2 bucket for staging..."
-          npx wrangler r2 bucket create cruiser-storage-staging --env api-staging || echo "Bucket may already exist"
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          
-      - name: Deploy D1 Database Schema to Staging
-        run: |
-          echo "🗄️ Deploying D1 database schema to staging..."
-          npx wrangler d1 execute cruiser-db-staging --env api-staging --file=packages/frontend/schema.sql
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          
-      - name: Deploy API Worker to Staging
-        run: |
-          echo "🚀 Deploying API worker to staging..."
-          npx wrangler deploy --env api-staging
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          
-      - name: Deploy Frontend Worker to Staging
-        run: |
-          echo "🎨 Deploying frontend worker to staging..."
-          cd packages/frontend
-          npx wrangler deploy --env staging
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          
-      - name: Verify Deployment
-        run: |
-          echo "✅ Staging deployment completed successfully!"
-          echo "🌐 API: https://cruiser-aviation-api-staging.julian-pad.workers.dev"
-          echo "🎨 Frontend: https://cruiser-aviation-frontend-staging.julian-pad.workers.dev" 
+    - name: Setup Cloudflare credentials
+      run: |
+        echo "CLOUDFLARE_ACCOUNT_ID=${{ secrets.CLOUDFLARE_ACCOUNT_ID }}" >> $GITHUB_ENV
+        echo "CLOUDFLARE_API_TOKEN=${{ secrets.CLOUDFLARE_API_TOKEN }}" >> $GITHUB_ENV
+        
+    - name: Make deployment script executable
+      run: chmod +x scripts/deploy-staging.sh
+      
+    - name: Deploy to staging
+      run: ./scripts/deploy-staging.sh
+      env:
+        CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        
+    - name: Verify deployment
+      run: |
+        echo "Waiting for deployment to stabilize..."
+        sleep 30
+        
+        echo "Testing staging deployment..."
+        STAGING_URL="https://ca-staging.julian-pad.workers.dev/health"
+        RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" "$STAGING_URL" || echo "000")
+        
+        if [ "$RESPONSE" = "200" ]; then
+          echo "✅ Staging deployment successful!"
+          echo "🌐 Staging URL: $STAGING_URL"
+        else
+          echo "❌ Staging deployment failed (HTTP $RESPONSE)"
+          exit 1
+        fi 

@@ -90,7 +90,16 @@ app.get('/health', (c) => {
 // Development mode check
 const isDevelopment = (c: any) => {
   const origin = c.req.header('Origin');
-  return origin?.includes('localhost') || origin?.includes('127.0.0.1');
+  const userAgent = c.req.header('User-Agent');
+  const host = c.req.header('Host');
+  
+  // Check multiple indicators for development mode
+  return origin?.includes('localhost') || 
+         origin?.includes('127.0.0.1') || 
+         host?.includes('localhost') || 
+         host?.includes('127.0.0.1') ||
+         userAgent?.includes('curl') || // Allow curl for testing
+         process.env.NODE_ENV === 'development';
 };
 
 // Mock user for development
@@ -396,7 +405,7 @@ async function handleImageUpload(c: any, folder: string, fieldName: string = 'im
     const timestamp = Date.now();
     const randomId = crypto.randomUUID().split('-')[0];
     const extension = file.name.split('.').pop() || 'jpg';
-    const filename = `${folder}/${timestamp}-${randomId}.${extension}`;
+    const filename = `${timestamp}-${randomId}.${extension}`;
 
     if (isDevelopment(c)) {
       // In development mode, store in R2 with local prefix
@@ -424,14 +433,15 @@ async function handleImageUpload(c: any, folder: string, fieldName: string = 'im
       }
     } else {
       // In production, upload to R2
-      await c.env.STORAGE.put(filename, await file.arrayBuffer(), {
+      const productionFilename = `${folder}/${filename}`;
+      await c.env.STORAGE.put(productionFilename, await file.arrayBuffer(), {
         httpMetadata: {
           contentType: file.type,
         },
       });
 
       // Return the file URL
-      const fileUrl = `https://cruiser-storage-staging.r2.cloudflarestorage.com/${filename}`;
+      const fileUrl = `https://cruiser-storage-staging.r2.cloudflarestorage.com/${productionFilename}`;
       
       return c.json({ 
         success: true,
